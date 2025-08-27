@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from nicegui import ui
 import uvicorn
 
 from config import settings
@@ -9,6 +10,8 @@ app = FastAPI(
 )
 
 app.include_router(main_router)
+
+ui.run_with(app, mount_path='/admin')
 
 uvicorn.run(
     app,

@@ -1,3 +1,4 @@
+from log import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,12 +17,16 @@ class BaseService:
         """Функция чтения единичной записи таблицы."""
         query = select(self.model).where(self.model.id == obj_id)
         db_obj = await session.execute(query)
-        return db_obj.scalars().first()
+        db_obj = db_obj.scalars().first()
+        logger.log('DB_ACCESS', f'Entry retrieve: model={db_obj.__class__.__name__}, id={db_obj.id}')
+        return db_obj
 
     async def get_all(
         self,
-        db: AsyncSession,
+        session: AsyncSession,
     ):
         """Метод чтения всех записей таблицы."""
-        result = await db.execute(select(self.model))
-        return result.scalars().all()
+        result = await session.execute(select(self.model))
+        result = result.scalars().all()
+        logger.log('DB_ACCESS', f'All entries retrieve: model={self.model.__name__}')        
+        return result

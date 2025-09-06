@@ -11,14 +11,16 @@ class PreBase:
 
     id = Column(Integer, primary_key=True)
 
-    @declared_attr # type: ignore[valid-type]
+    @declared_attr
     def __tablename__(cls) -> str:
-        return cls.__name__.lower() # type: ignore[attr-defined]
+        return cls.__name__.lower()
 
 
 AppBaseClass = declarative_base(cls=PreBase)
 
-engine = create_async_engine(settings.DATABASE_URL)
+engine = create_async_engine(
+    url=settings.DATABASE_URL,
+    echo=False if settings.PROD_ENVIRONMENT else True)
 
 AsyncSessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession)
 

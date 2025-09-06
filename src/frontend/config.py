@@ -11,15 +11,12 @@ class Settings(BaseSettings):
     '''Класс настроек приложения.'''
 
     PROD_ENVIRONMENT: bool = os.getenv('PROD', 'False').lower() in ('true', '1')
-    APP_TITLE: str = 'HR Bot'
+    APP_TITLE: str = 'HR Bot Admin Panel'
     HOST: str = '127.0.0.1'
-    PORT: int = 8000
-    DATABASE_URL: str = (
-        f'postgresql+asyncpg://'
-        f'{os.getenv('POSTGRES_USER')}:'
-        f'{os.getenv('POSTGRES_PASSWORD')}@'
-        f'{os.getenv('POSTGRES_DB_HOST')}:{os.getenv('POSTGRES_DB_PORT')}/'
-        f'{os.getenv('POSTGRES_DB')}')
+    PORT: int = 5000
+    API_HOST: str = os.getenv('API_HOST', '127.0.0.1')
+    API_PORT: str = os.getenv('API_PORT', '8000')
+    API_URL: str = f'{API_HOST}:{API_PORT}/api'
     # LOGS_FILE_PATH: str = 'logs/{time:YYYY-MM-DD}.log'
     # LOGS_FORMAT: str = '[{level}] | {time:DD.MM.YYYY HH:mm:ss} {message}'
     # SECRET_KEY: str = os.getenv('SECRET_KEY', 'default_secret_key')

@@ -6,8 +6,9 @@ from bot_settings.constants import (SETTING_NAME_MAX_LEN,
                        SETTING_DESCRIPTION_MAX_LEN)
 
 
-class BotSettings(AppBaseClass):
+class BotSettingsOrm(AppBaseClass):
     """Модель таблицы BotSettings."""
+    __tablename__ = 'setting'
 
     name = Column(
         String(SETTING_NAME_MAX_LEN),

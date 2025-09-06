@@ -1,21 +1,17 @@
 from fastapi import FastAPI
-from nicegui import ui
 import uvicorn
 
 from config import settings
 from routers import main_router
 
-app = FastAPI(
-    title=settings.APP_TITLE
-)
+fastapi_app = FastAPI(title=settings.APP_TITLE)
 
-app.include_router(main_router)
+fastapi_app.include_router(main_router)
 
-ui.run_with(app, mount_path='/admin')
-
-uvicorn.run(
-    app,
-    host=settings.HOST,
-    port=settings.PORT,
-    reload=False if settings.PROD_ENVIRONMENT else True,
-)
+if __name__ == "__main__":
+    uvicorn.run(
+        "main:fastapi_app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=False if settings.PROD_ENVIRONMENT else True,
+    )

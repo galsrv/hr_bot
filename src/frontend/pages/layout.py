@@ -2,7 +2,11 @@ from functools import wraps
 
 from nicegui import ui
 
-from pages.urls import MENU_PAGE_URL, SETTINGS_PAGE_URL
+from pages.urls import (
+    MENU_PAGE_URL,
+    SETTINGS_PAGE_URL,
+    USERS_PAGE_URL
+)
 
 def navbar() -> None:
     '''Навигационная панель.'''
@@ -14,7 +18,7 @@ def navbar() -> None:
             ui.link('Меню', MENU_PAGE_URL).classes('!text-white no-underline hover:!text-gray-300 text-lg')
             ui.link('Сообщения', '/messages').classes('!text-white no-underline hover:!text-gray-300 text-lg')
             ui.link('Настройки', SETTINGS_PAGE_URL).classes('!text-white no-underline hover:!text-gray-300 text-lg')
-            ui.link('Пользователи', '/users').classes('!text-white no-underline hover:!text-gray-300 text-lg')
+            ui.link('Пользователи', USERS_PAGE_URL).classes('!text-white no-underline hover:!text-gray-300 text-lg')
 
 def layout_decorator(func):
     @wraps(func)

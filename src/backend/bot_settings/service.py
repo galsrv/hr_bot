@@ -3,6 +3,10 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from base_service import BaseService
+from bot_settings.constants import(
+    ERROR_MESSAGE_INT_TYPE,
+    ERROR_MESSAGE_VALUE_INT
+)
 from bot_settings.models import BotSettingsOrm
 from bot_settings.schemas import SettingsChangeSchema
 
@@ -22,12 +26,12 @@ class BotSettingsService(BaseService):
             except ValueError:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail='Значение должно быть целым числом'
+                    detail=ERROR_MESSAGE_INT_TYPE
                 )
             if not (1 < int(new_value) < 10):
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail='Значение должно быть не менее 1 и не более 10'
+                    detail=ERROR_MESSAGE_VALUE_INT
                 )
 
     async def setting_update(self,

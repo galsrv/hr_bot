@@ -4,7 +4,7 @@ from functools import partial
 from nicegui import APIRouter, ui
 
 from pages.layout import layout_decorator
-from pages.settings.service import api_client
+from pages.settings.service import settings_api_client
 from pages.urls import SETTINGS_PAGE_URL
 from pages.utils import client_connector_error_decorator
 
@@ -15,8 +15,8 @@ settings_router = APIRouter(prefix=SETTINGS_PAGE_URL)
 @layout_decorator
 async def settings_page():
     '''Получаем настройки от бэкенда.'''
-    settings_list = await api_client.get_settings()
-    ui.item_label('Настройки').props('header').classes('text-bold text-h2')
+    settings_list = await settings_api_client.get_settings()
+    ui.item_label('Настройки').props('header').classes('text-bold text-h4')
     if settings_list:
         for setting in settings_list:
             with ui.card().classes('w-full'):
@@ -28,7 +28,10 @@ async def settings_page():
 
 @client_connector_error_decorator
 async def save_setting_button_handler(id: int, new_value: str) -> None:
-    result = await api_client.update_setting_value(id, new_value)
+    data_input =  dict()
+    data_input['value'] = new_value
+
+    result = await settings_api_client.update_setting(id, data_input)
 
     if result['OK']:
         ui.notify(result['message'], type='positive')
@@ -42,13 +45,13 @@ async def save_setting_button_handler(id: int, new_value: str) -> None:
 @layout_decorator
 async def setting_page(id: int):
     '''Получаем настройку от бэкенда.'''
-    setting: dict | None = await api_client.get_one_setting(id)
+    setting: dict | None = await settings_api_client.get_one_setting(id)
 
     if setting is None:
         ui.notify('Запрошенная настройка не найдена', type='negative')
         ui.button('НАЗАД', on_click=ui.navigate.back)
     else:
-        ui.item_label('Изменение настройки').props('header').classes('text-bold text-h2')
+        ui.item_label('Изменение настройки').props('header').classes('text-bold text-h4')
         with ui.card().classes('w-full'):
             ui.label(setting['name']).classes('text-h6')
             ui.label(setting['description']).classes('text-subtitle2')

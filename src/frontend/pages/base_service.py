@@ -1,0 +1,41 @@
+from aiohttp import ClientSession
+from fastapi import status
+
+class BaseApiClient():
+
+    async def _response_parser(self, response) -> dict:
+        response_dict = await response.json()
+
+        if response.status not in (status.HTTP_200_OK, status.HTTP_201_CREATED):
+            # Парсим текст ошибки от API-сервера, ответ может приходить в разной структуре
+            try:
+                error_message = response_dict['detail']
+                if type(error_message) is list:
+                    error_message = error_message[0]['msg']
+            except (KeyError, IndexError, TypeError):
+                error_message = 'Произошла ошибка при сохранении данных'
+            return {'OK': False, 'message': error_message}
+
+        return {'OK': True, 'message': 'Значение сохранено!'}
+
+    async def get(self, url) -> dict | list[dict] | None:
+        '''Получить данные от бэкенда.'''
+
+        async with ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == status.HTTP_200_OK:
+                    result = await response.json()
+                    return result
+                return None
+
+    async def post(self, url: str, data_input: dict) -> dict:
+        '''Создать запись на бэкенде.'''
+        async with ClientSession() as session:
+            async with session.post(url, json=data_input) as response:
+                return await self._response_parser(response)
+
+    async def patch(self, url: str, data_input: dict):
+        '''Обновить данные записи на бэкенде.'''
+        async with ClientSession() as session:
+            async with session.patch(url, json=data_input) as response:
+                return await self._response_parser(response)

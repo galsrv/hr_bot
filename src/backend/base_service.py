@@ -36,7 +36,7 @@ class BaseService:
         session: AsyncSession,
      ):
         """Метод чтения всех записей таблицы."""
-        query = select(self.model)
+        query = select(self.model).order_by(*self.model.__order_by__)
         result = await session.execute(query)
         result = result.scalars().all()
         logger.log('DB_ACCESS', f'Entry retrieve: model={self.model.__name__}, {len(result)} entries retrieved')    

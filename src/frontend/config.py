@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     # SECRET_KEY: str = os.getenv('SECRET_KEY', 'default_secret_key')
     # ACCESS_TOKEN_EXPIRES_DAYS: int = int(os.getenv('ACCESS_TOKEN_EXPIRES_DAYS', 30))
     # ALGORITHM: str = os.getenv('ALGORITHM', 'HS256')
+    USERS_PER_PAGE: int = 3
 
 
 settings = Settings()

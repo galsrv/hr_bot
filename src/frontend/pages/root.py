@@ -1,4 +1,4 @@
-from nicegui import APIRouter, app as ui
+from nicegui import APIRouter, ui
 
 from pages.layout import layout_decorator
 

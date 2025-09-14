@@ -15,13 +15,9 @@ class PreBase:
     def __tablename__(cls) -> str:
         return cls.__name__.lower()
 
-    @classmethod
-    def default_order(cls, stmt):
-        '''Сортировка при наличии параметра __order_by__ у модели.'''
-        if hasattr(cls, '__order_by__'):
-            stmt = stmt.order_by(*cls.__order_by__)
-        return stmt
-
+    @declared_attr
+    def __order_by__(cls):
+        return (cls.id.asc(), )
 
 AppBaseClass = declarative_base(cls=PreBase)
 

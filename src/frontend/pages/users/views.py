@@ -3,10 +3,10 @@ from functools import partial
 import re
 from typing import Callable
 
-from aiohttp import ClientConnectorError
+from fastapi import Depends, Request
 from nicegui import APIRouter, ui
 
-from pages.layout import layout_decorator
+from pages.layout import navbar
 from pages.users.constants import(
     USER_NAME_MAX_LENGTH,
     USER_NAME_MIN_LENGTH,
@@ -14,10 +14,14 @@ from pages.users.constants import(
     USER_PASSWORD_MIN_LENGTH,
     USERNAME_REGEXP
 )
-# from pages.users.layout import users_filters
+from pages.auth.service import auth_api_client
 from pages.users.service import users_api_client
-from pages.urls import USERS_PAGE_URL
-from pages.utils import build_url, client_connector_error_decorator
+from pages.users.schemas import (
+    UserReadSchema,
+    UsersListPageSchema
+)
+from pages.urls import USERS_PAGE_URL, LOGIN_PAGE_URL
+from pages.utils import build_url
 
 users_router = APIRouter(prefix=USERS_PAGE_URL)
 
@@ -62,6 +66,16 @@ def _user_list_filters(roles: dict | None, role: int = None, is_active: bool = N
 
     return navigate_to_filtered_list
 
+def _validate_username(value: str | None) -> str | None:
+    '''Валидируем имя пользователя'''
+    if value and not (USER_NAME_MIN_LENGTH <= len(value) <= USER_NAME_MAX_LENGTH and re.match(USERNAME_REGEXP, value)):
+        return f'Введите значение из латинских символов длиной от {USER_NAME_MIN_LENGTH} до {USER_NAME_MAX_LENGTH} символов'
+
+def _validate_password(value: str | None) -> str | None:
+    '''Валидируем пароль'''
+    if value and not (USER_PASSWORD_MIN_LENGTH <= len(value) <= USER_PASSWORD_MAX_LENGTH):
+        return f'Введите значение не короче {USER_PASSWORD_MIN_LENGTH} и не длиннее {USER_PASSWORD_MAX_LENGTH}'
+
 def _user_details(user_data: dict, roles: list) -> list:
     '''Вывод полей формы создания/изменения пользователя'''
     fields_to_validate = list()
@@ -74,14 +88,13 @@ def _user_details(user_data: dict, roles: list) -> list:
         username_input = ui.input(
             label='Имя пользователя',
             placeholder='Введите имя пользователя, состоящее из латинских букв',
-            validation={
-                f'Введите значение из латинских символов длиной от {USER_NAME_MIN_LENGTH} до {USER_NAME_MAX_LENGTH} символов': lambda value: value is None or (USER_NAME_MIN_LENGTH <= len(value) <= USER_NAME_MAX_LENGTH and re.match(USERNAME_REGEXP, value))}
+            validation=lambda value: _validate_username(value),
             ).classes('w-full').bind_value_to(user_data, 'username')
         fields_to_validate.append(username_input)
     ui.select(
         options=roles,
         label='Роль',
-        value=user_data['role_id']).bind_value_to(user_data, 'role_id')
+        value=user_data['role']['id']).bind_value_to(user_data, 'role_id')
     is_active_checkbox = ui.checkbox(
         text='Активен',
         value=user_data['is_active'],
@@ -90,26 +103,22 @@ def _user_details(user_data: dict, roles: list) -> list:
     is_active_checkbox.visible = bool(user_data.get('id', False))
     password_input = ui.input(
         label='Новый пароль',
-        placeholder='Введите новый пароль длиной не менее 8 знаков и не более 50 символов',
+        placeholder=f'Введите новый пароль длиной не менее {USER_PASSWORD_MIN_LENGTH} знаков и не более {USER_PASSWORD_MAX_LENGTH} символов',
         password=True,
         password_toggle_button=True,
-        validation={
-            f'Введите значение не короче {USER_PASSWORD_MIN_LENGTH} и не длиннее {USER_PASSWORD_MAX_LENGTH}': lambda value: value is None or USER_PASSWORD_MIN_LENGTH <= len(value) <= USER_PASSWORD_MAX_LENGTH}
-    ).classes('w-full').bind_value_to(user_data, 'password')
+        validation=lambda value: _validate_password(value)
+        ).bind_value_to(user_data, 'password')
     fields_to_validate.append(password_input)
     # Возвращаем объекты полей, которые необходимо проверить перед сохранением записи
     return fields_to_validate
 
-@client_connector_error_decorator
 async def _save_user_button_handler(
     user_data: dict,
     fields_to_validate: list,
     action: str = 'create'
 ) -> None:
-
-    # Валидируем поля ввода 
-    # Так избегаем отправки заведомо некорректных данных на бэкенд. 
-    # Правда также дублируем валидацию на фронтенде
+    # Валидируем поля ввода, избегаем отправки заведомо некорректных данных на бэкенд. 
+    # Валидация дублируется на бэке и фронте
     if any([not f.validate() for f in fields_to_validate]):
         ui.notify('Проверьте значения полей!', type='negative')
         return 
@@ -130,58 +139,104 @@ async def _save_user_button_handler(
     else:
         ui.notify(result['message'], type='negative')
 
+# async def get_permission(request: Request):
+#     session_id = request.cookies.get('session_id')
+
+#     user: UserReadSchema | None = await auth_api_client.get_user_by_session(session_id) if session_id else None
+
+#     if not user:
+#         ui.navigate.to(LOGIN_PAGE_URL)
+
+#     navbar(user)
+
+#     permission = user.role.can_edit_users if user else False
+
+#     return permission
+
+async def get_current_user(request: Request) -> UserReadSchema | None:
+    session_id = request.cookies.get('session_id')
+    return await auth_api_client.get_user_by_session(session_id) if session_id else None
+
+async def get_edit_users_permission(user: UserReadSchema = Depends(get_current_user)):
+    return user.role.can_edit_users if user else False
+
+
 @users_router.page('/', title='Пользователи')
-@client_connector_error_decorator
-@layout_decorator
-async def users_list_page(page: int = 1, role: int = None, is_active: bool = None, name: str = None):
+async def users_list_page(
+    page: int = 1,
+    role: int = None,
+    is_active: bool = None,
+    name: str = None,
+    user: UserReadSchema = Depends(get_current_user),
+    permission: bool = Depends(get_edit_users_permission),
+):
     '''Страница со списком пользователей.'''
+    # Создание ui-элементов нельзя вынести в зависимость
+    if not user:
+        ui.navigate.to(LOGIN_PAGE_URL)
+        return
+    navbar(user)
+
     # Получаем список пользователей согласно фильтрам
-    response = await users_api_client.get_users(page, role, is_active, name)
+    users_list: UsersListPageSchema | None = await users_api_client.get_users(page, role, is_active, name)
     
-    if response is None:
-        raise ClientConnectorError
-
-    users_list, total, page, pages  = response['items'], response['total'], response['page'], response['pages']
-
     # Получаем список ролей для опции фильтрации
     roles: dict | None = await users_api_client.get_roles()
 
     # Выводим заголовок
     ui.item_label('Пользователи').props('header').classes('text-bold text-h4')
-    ui.item_label(f'Всего записей: {total}').props('header').classes('text-h6')
+    ui.item_label(f'Всего записей: {users_list.total}').props('header').classes('text-h6')
 
     # Выводим фильтры записей в списке, получаем функцию для корретного перехода по страницам 
     navigate_func: Callable = _user_list_filters(roles, role, is_active, name)
 
     # Выводим кнопку Создать нового пользователя
-    ui.button('Создать', on_click=lambda : ui.navigate.to('create'))
+    ui.button('Создать', on_click=lambda : ui.navigate.to('create')).bind_enabled_from(permission)
 
     # Выводим список пользователей
-    for user in users_list:
+    for user in users_list.items:
         with ui.card().classes('w-full'):
-            ui.label(f'id: {user['id']}').classes('text-subtitle2')
-            ui.label(f'Имя: {user['username']}').classes('text-h6')
-            ui.label(f'Роль: {user['role_name']}').classes('text-subtitle2')
-            ui.label(f'Активен: {user['is_active']}').classes('text-subtitle2')
-            ui.button('ИЗМЕНИТЬ',
-                    on_click=lambda s_id=user["id"]: ui.navigate.to(f'{s_id}'))
+            with ui.grid(columns=2):
+                ui.label('id').classes('text-subtitle2')
+                ui.label(user.id).classes('text-subtitle2')
+                ui.label('Имя').classes('text-subtitle2')
+                ui.label(user.username).classes('text-subtitle2')
+                ui.label('Роль').classes('text-subtitle2')
+                ui.label(user.role.name).classes('text-subtitle2')
+                ui.label('Активен').classes('text-subtitle2')
+                ui.label(str(user.is_active)).classes('text-subtitle2')
+                ui.button('ИЗМЕНИТЬ',
+                        on_click=lambda s_id=user.id: ui.navigate.to(f'{s_id}')).bind_enabled_from(permission)
 
     # Выводим кнопки пагинации
-    if pages > 1:
-        current_page = ui.pagination(1, pages,
-            value=page,
+    if users_list.pages > 1:
+        current_page = ui.pagination(1, users_list.pages,
+            value=users_list.page,
             direction_links=True,
             on_change=lambda: navigate_func(current_page.value))
 
 @users_router.page('/create', title='Создание пользователя')
-@client_connector_error_decorator
-@layout_decorator
-async def user_create_page():
+async def user_create_page(request: Request):
+    user = None
+    session_id = request.cookies.get('session_id')
+
+    user: UserReadSchema | None = await auth_api_client.get_user_by_session(session_id) if session_id else None
+
+    if not user:
+        ui.navigate.to(LOGIN_PAGE_URL)
+
+    navbar(user)
+
+    permission = user.role.can_edit_users if user else False
+
+    if not permission:
+        ui.navigate.to(USERS_PAGE_URL)
+
     '''Страница создания пользователя.'''
     # Получаем список ролей для вывода опции в поле выбора
     roles: dict | None = await users_api_client.get_roles()
     # Инициализируем стартовые значения атрибутов пользователя
-    user_data = {'username': None, 'role_id': list(roles.keys())[0], 'is_active': True}
+    user_data = {'username': None, 'role': {'id': list(roles.keys())[0]}, 'is_active': True}
 
     # Выводим заголовок
     ui.item_label('Новый пользователь').props('header').classes('text-bold text-h4')
@@ -197,10 +252,22 @@ async def user_create_page():
                 on_click=ui.navigate.back)
 
 @users_router.page('/{id}', title='Изменение пользователя')
-@client_connector_error_decorator
-@layout_decorator
-async def user_edit_page(id: int):
+async def user_edit_page(id: int, request: Request):
     '''Страница изменения пользователя.'''
+    user = None
+    session_id = request.cookies.get('session_id')
+    user: UserReadSchema | None = await auth_api_client.get_user_by_session(session_id) if session_id else None
+
+    if not user:
+        ui.navigate.to(LOGIN_PAGE_URL)
+
+    navbar(user)
+
+    permission = user.role.can_edit_users if user else False
+
+    if not permission:
+        ui.navigate.to(USERS_PAGE_URL)
+
     # Получаем данные пользователя и список ролей для вывода опции в поле выбора
     user_data: dict | None = await users_api_client.get_user(id)
     roles: dict | None = await users_api_client.get_roles()

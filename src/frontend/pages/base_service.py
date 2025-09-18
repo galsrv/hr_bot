@@ -20,7 +20,6 @@ class BaseApiClient():
 
     async def get(self, url) -> dict | list[dict] | None:
         '''Получить данные от бэкенда.'''
-
         async with ClientSession() as session:
             async with session.get(url) as response:
                 if response.status == status.HTTP_200_OK:
@@ -39,3 +38,9 @@ class BaseApiClient():
         async with ClientSession() as session:
             async with session.patch(url, json=data_input) as response:
                 return await self._response_parser(response)
+
+    async def delete(self, url) -> dict | list[dict] | None:
+        '''Удалить данне на бэкенде бэкенда.'''
+        async with ClientSession() as session:
+            async with session.delete(url):
+                return None

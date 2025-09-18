@@ -1,3 +1,6 @@
 SETTINGS_PAGE_URL = '/admin/settings'
 MENU_PAGE_URL = '/admin/menu'
 USERS_PAGE_URL = '/admin/users'
+AUTH_PAGE_URL = '/admin/auth'
+LOGIN_PAGE_URL = AUTH_PAGE_URL + '/login'
+LOGOUT_PAGE_URL = AUTH_PAGE_URL + '/logout'

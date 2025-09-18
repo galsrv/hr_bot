@@ -1,11 +1,11 @@
 from fastapi import HTTPException, status
-from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from base_service import BaseService
 from bot_settings.constants import(
     ERROR_MESSAGE_INT_TYPE,
-    ERROR_MESSAGE_VALUE_INT
+    ERROR_MESSAGE_VALUE_INT,
+    SETTING_INT_MAX_VALUE
 )
 from bot_settings.models import BotSettingsOrm
 from bot_settings.schemas import SettingsChangeSchema
@@ -28,7 +28,7 @@ class BotSettingsService(BaseService):
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=ERROR_MESSAGE_INT_TYPE
                 )
-            if not (1 < int(new_value) < 10):
+            if not (0 < int(new_value) < SETTING_INT_MAX_VALUE):
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail=ERROR_MESSAGE_VALUE_INT
@@ -44,12 +44,8 @@ class BotSettingsService(BaseService):
 
         # Валидируем то, что не выловил Pydantic. Всё, что связано с данными в БД
         await self.setting_value_check(setting.int_type, data_input.value)
-        
-        setting.value = data_input.value
-        session.add(setting)
-        await session.commit()
-        await session.refresh(setting)
-        logger.log('DB_ACCESS', f'Entry update: model={setting.__class__.__name__}, id={setting.id}, updated: value={setting.value}')
+
+        setting = await self.update(session, id, data_input)
         return setting
 
 bot_settings_service = BotSettingsService()

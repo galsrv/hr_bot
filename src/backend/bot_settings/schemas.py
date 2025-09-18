@@ -21,5 +21,5 @@ class SettingsChangeSchema(BaseModel):
     value: str = Field(min_length=1, max_length=SETTING_VALUE_MAX_LEN)
 
     model_config = ConfigDict(
-        extra='forbid',
+        extra='ignore',
         )

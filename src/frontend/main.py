@@ -11,6 +11,5 @@ ui.run(
     port=settings.PORT,
     reload=False if settings.PROD_ENVIRONMENT else True,
     favicon='static/favicon.ico',
+    show=False,
 )
-
-

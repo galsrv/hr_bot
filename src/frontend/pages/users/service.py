@@ -1,12 +1,19 @@
 from urllib.parse import urlencode
 
 from pages.base_service import BaseApiClient
+from pages.users.schemas import UsersListPageSchema
 from config import settings
 
 class UsersApiClient(BaseApiClient):
     MODULE_URL = 'users'
 
-    async def get_users(self, page: int = 1, role: int = None, is_active: bool = None, name: str = None) -> list[dict] | None:
+    async def get_users(
+        self,
+        page: int = 1,
+        role: int = None,
+        is_active: bool = None,
+        name: str = None
+)-> UsersListPageSchema | None:
         '''Получить список пользователей от бэкенда.'''
         params = {
             'page': page,
@@ -20,7 +27,8 @@ class UsersApiClient(BaseApiClient):
 
         query_string = urlencode(params)
         url = f'{settings.API_URL}/{self.MODULE_URL}/?{query_string}'
-        return await self.get(url)
+        response = await self.get(url)
+        return UsersListPageSchema(**response) if response else None
 
     async def get_roles(self) -> dict:
         '''Получить список ролей от бэкенда.'''

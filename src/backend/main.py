@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 import uvicorn
 
+from auth.tasks import lifespan_tasks
 from config import settings
 from routers import main_router
 
-fastapi_app = FastAPI(title=settings.APP_TITLE)
+fastapi_app = FastAPI(
+    title=settings.APP_TITLE,
+    lifespan=lifespan_tasks
+)
 
 fastapi_app.include_router(main_router)
 

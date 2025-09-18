@@ -6,7 +6,7 @@ class SettingsApiClient(BaseApiClient):
 
     async def get_settings(self, to_dict: bool = False) -> dict | list[dict] | None:
         '''Получить список настроек от бэкенда.'''
-        url = f'{settings.API_URL}/{self.MODULE_URL}'
+        url = f'{settings.API_URL}/{self.MODULE_URL}/'
         return await self.get(url)
 
     async def get_one_setting(self, id: int) -> dict | None:

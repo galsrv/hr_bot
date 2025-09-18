@@ -5,13 +5,8 @@ USER_PASSWORD_MIN_LENGTH = 8
 USER_PASSWORD_MAX_LENGTH = 255
 
 ERROR_MESSAGE_USERNAME_TAKEN = 'Указанное имя пользователя уже существует'
-ERROR_MESSAGE_ROLE_NOT_EXIST = 'Указанная роль не существует'
 
 ERROR_MESSAGE_ENTRY_NOT_EXIST = 'Указанная запись не найдена'
-ERROR_MESSAGE_WRONG_PASSWORD = 'Введен неверный пароль'
+ERROR_MESSAGE_INACTIVE_USER = 'Пользователь заблокирован'
 
 USERNAME_REGEXP = r'^[A-Za-z]+$'
-
-SESSION_DURATION_IN_DAYS = 3 
-SESSION_ID_LENGTH = 64
-TOKEN_HEX_BASE = 32

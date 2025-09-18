@@ -8,22 +8,22 @@ from users.constants import (
     USER_PASSWORD_MIN_LENGTH,
     USER_PASSWORD_MAX_LENGTH,
     USERNAME_REGEXP)
-from users.utils import hash_password, create_random_session_string
+from users.utils import hash_password
 
 
 class RoleReadSchema(BaseModel):
     '''Класс чтения роли.'''
     id: int
     name: str
+    can_edit_settings: bool
+    can_edit_users: bool
+    can_send_messages: bool
+    can_edit_menu: bool
 
 class UserBaseSchema(BaseModel):
     '''Базовый класс для создания и изменения пользователя'''
-    password: str = Field(min_length=USER_PASSWORD_MIN_LENGTH,
-                          max_length=USER_PASSWORD_MAX_LENGTH,
-                          repr=False)
-    role_id: int
 
-    @field_serializer('password')
+    @field_serializer('password', check_fields=False)
     def hashing_password(self, password: str):
         '''Хэшируем заданный пользователем пароль.'''
         if password:
@@ -36,6 +36,10 @@ class UserCreateSchema(UserBaseSchema):
     username: str = Field(pattern=USERNAME_REGEXP,
                           min_length=USER_NAME_MIN_LENGTH,
                           max_length=USER_NAME_MAX_LENGTH)
+    password: str = Field(min_length=USER_PASSWORD_MIN_LENGTH,
+                          max_length=USER_PASSWORD_MAX_LENGTH,
+                          repr=False)
+    role_id: int
     is_active: Optional[bool] = True
 
 class UserUpdateSchema(UserBaseSchema):
@@ -51,9 +55,8 @@ class UserReadSchema(BaseModel):
     '''Класс чтения пользователя.'''
     id: int
     username: str
-    role_id: int
-    role_name: str
     is_active: bool
+    role: RoleReadSchema
 
 class UserLoginSchema(BaseModel):
     '''Класс чтения пользователя.'''
@@ -62,21 +65,4 @@ class UserLoginSchema(BaseModel):
 
     model_config = ConfigDict(extra='ignore')
 
-class SessionReadSchema(BaseModel):
-    '''Класс чтения сессии.'''
-    id: int
-    session_id: str
-    user_id: int
 
-class SessionCreateSchema(BaseModel):
-    '''Класс создания сессии.'''
-    user_id: int
-    session_id: str
-
-    model_config = ConfigDict(
-        extra='ignore')
-
-    @field_serializer('session_id')
-    def session_id_generation(self, session_id):
-        '''Генерируем id сессии.'''
-        return create_random_session_string()

@@ -8,26 +8,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from base_service import BaseService
 from users.constants import(
     ERROR_MESSAGE_USERNAME_TAKEN,
-    ERROR_MESSAGE_ROLE_NOT_EXIST,
-    ERROR_MESSAGE_ENTRY_NOT_EXIST,
-    ERROR_MESSAGE_WRONG_PASSWORD,
+    ERROR_MESSAGE_INACTIVE_USER
 )
-from users.models import RolesOrm, UsersOrm, SessionsOrm
-from users.schemas import UserCreateSchema, UserUpdateSchema, SessionCreateSchema
-from users.utils import verify_password
+from users.models import RolesOrm, UsersOrm
+from users.schemas import (
+    UserCreateSchema,
+    UserUpdateSchema,
+)
 
 class RoleService(BaseService):
     def __init__(self):
         super().__init__(RolesOrm)
 
 role_service = RoleService()
-
-class SessionService(BaseService):
-    def __init__(self):
-        super().__init__(SessionsOrm)
-
-session_service = SessionService()
-
 
 class UserService(BaseService):
     def __init__(self):
@@ -59,54 +52,42 @@ class UserService(BaseService):
         logger.log('DB_ACCESS', f'Data retrieve: model={self.model.__name__}, {len(result.items)} entries retrieved')        
         return result
 
-    async def is_username_available(
-        self,
-        session: AsyncSession,
-        username: str,
-    ) -> HTTPException | None:
-        '''Проверяем, занято ли запрошенное имя пользователя.'''
-        query = select(UsersOrm).where(UsersOrm.username == username)
-        result = await session.execute(query)
-        result = result.scalars().one_or_none()
-        logger.log('DB_ACCESS', f'Data retrieve: model={UsersOrm.__name__}, username availability was checked') 
-        if result is not None:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=ERROR_MESSAGE_USERNAME_TAKEN)
-
     async def get_user_by_username(
         self,
         session: AsyncSession,
         username: str,
-    ) -> UsersOrm:           
+    ) -> UsersOrm | None:           
         '''Ищем пользователя по имени.'''
         query = select(UsersOrm).where(UsersOrm.username == username)
-        result = await session.execute(query)
-        result = result.scalars().one_or_none()
+        user = await session.execute(query)
+        user = user.scalars().first()
+        logger.log('DB_ACCESS', f'Data retrieve: model={UsersOrm.__name__}, user {user.id if user else None} was found by username')
+        return user
 
-        if result is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=ERROR_MESSAGE_ENTRY_NOT_EXIST)
-
-        logger.log('DB_ACCESS', f'Data retrieve: model={UsersOrm.__name__}, user {result.id} was found by username')
-        return result
-
-    async def does_role_exist(
+    async def is_username_available(
         self,
         session: AsyncSession,
-        role_id: int,
-    ) -> HTTPException | None:
-        '''Проверяем, существует ли указанная роль.'''
-        query = select(RolesOrm).where(RolesOrm.id == role_id)
-        result = await session.execute(query)
-        result = result.scalars().one_or_none()
-        logger.log('DB_ACCESS', f'Data retrieve: model={RolesOrm.__name__}, role"s existense was checked') 
-        if result is None:
+        username: str,
+    ) -> UsersOrm:           
+        '''Проверяем доступность запрошенного имени.'''
+        user = await self.get_user_by_username(session, username)
+
+        if user:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=ERROR_MESSAGE_ROLE_NOT_EXIST
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ERROR_MESSAGE_USERNAME_TAKEN
             )
+        return user
+
+    def is_user_active(
+            self,
+            user: UsersOrm,
+    ) -> None:
+        '''Проверяем активность пользователя.'''
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=ERROR_MESSAGE_INACTIVE_USER)
 
     async def user_create(
             self,
@@ -114,10 +95,9 @@ class UserService(BaseService):
             data_input: UserCreateSchema
     ) -> UsersOrm:
         '''Создаем нового пользователя.'''
-        # Валидируем то, что не выловил Pydantic. Всё, что связано с данными в БД
+        # Валидируем данные в БД. Это Pydantic не проверяет
         await self.is_username_available(session, data_input.username)
-        await self.does_role_exist(session, data_input.role_id)
-
+        await role_service.get(session, data_input.role_id)
         new_user = await self.create(session, data_input)
         return new_user
 
@@ -128,27 +108,12 @@ class UserService(BaseService):
             data_input: UserUpdateSchema
     ) -> UsersOrm:
         '''Вносим изменения в пользователя.'''
-        # Валидируем то, что не выловил Pydantic. Всё, что связано с данными в БД
+        # Валидируем данные в БД. Это Pydantic не проверяет
         if hasattr(data_input, 'role_id') and data_input.role_id is not None:
-            await self.does_role_exist(session, data_input.role_id)
-        
-        new_user = await self.update(session, id, data_input)
-        return new_user
+            await role_service.get(session, data_input.role_id)
 
-    async def user_login(
-            self,
-            session: AsyncSession,
-            user: UsersOrm,
-            password_entered: str
-    ) -> SessionsOrm:
-        '''Аутентифицируем пользователя.'''
-        if not verify_password(password_entered, user.password):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=ERROR_MESSAGE_WRONG_PASSWORD)
-        user_session_schema = SessionCreateSchema(user_id=user.id, session_id='generate me')
-        user_session = await session_service.create(session, user_session_schema)
-        return user_session
+        new_user: UsersOrm = await self.update(session, id, data_input)
+        return new_user
 
 user_service = UserService()
 

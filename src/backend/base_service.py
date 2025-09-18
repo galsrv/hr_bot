@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 from log import logger
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -34,7 +34,7 @@ class BaseService:
     async def get_all(
         self,
         session: AsyncSession,
-     ):
+    ):
         """Метод чтения всех записей таблицы."""
         query = select(self.model).order_by(*self.model.__order_by__)
         result = await session.execute(query)
@@ -55,7 +55,8 @@ class BaseService:
     async def update(self,
                        session: AsyncSession,
                        id: int,
-                       data_input):
+                       data_input
+    ):
         db_obj = await self.get(session, id)
         data_input: dict = data_input.model_dump(exclude_none=True)
         [setattr(db_obj, k, v) for k, v in data_input.items()]
@@ -65,3 +66,12 @@ class BaseService:
         await session.refresh(db_obj)
         logger.log('DB_ACCESS', f'Entry update: model={db_obj.__class__.__name__}, id={db_obj.id}')
         return db_obj
+
+    async def delete(self,
+                     session: AsyncSession,
+                     obj_id: int,
+    ) -> None:
+        query = delete(self.model).where(self.model.id==obj_id)
+        await session.execute(query)
+        await session.commit()
+        logger.log('DB_ACCESS', f'Entry deletion: model={self.model.__name__}, id={obj_id}')

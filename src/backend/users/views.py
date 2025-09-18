@@ -7,8 +7,6 @@ from users.schemas import (
     UserCreateSchema,
     UserReadSchema,
     UserUpdateSchema,
-    UserLoginSchema,
-    SessionReadSchema
 )
 from users.service import role_service, user_service
 from database import get_async_session
@@ -37,6 +35,7 @@ async def retrieve_users(
     role: int | None = None,
     is_active: bool | None = None,
     name: str | None = None,
+    # Параметры фильтрации можно было бы вынести в модель Pydantic, но это пришлось бы стыковать с пагинацией
     page_params: Params = Depends(),
     session: AsyncSession = Depends(get_async_session)
 ) -> Page[UserReadSchema]:
@@ -85,17 +84,3 @@ async def change_user(
     user = await user_service.user_update(session, id, data_input)
     return user
 
-@auth_router.post(
-    '/login',
-    response_model=SessionReadSchema,
-    status_code=status.HTTP_201_CREATED,
-    summary="Аутентификация пользователя с созданием сессии"
-)
-async def user_login(
-    data_input: UserLoginSchema,
-    session: AsyncSession = Depends(get_async_session)
-) -> SessionReadSchema:
-    '''Эндпоинт аутентификации пользователя.'''
-    user = await user_service.get_user_by_username(session, data_input.username)
-    user_session = await user_service.user_login(session, user, data_input.password)
-    return user_session

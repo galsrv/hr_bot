@@ -13,13 +13,13 @@ botsettings_router = APIRouter()
 
 
 @botsettings_router.get(
-    '',
+    '/',
     response_model=list[SettingsReadSchema],
     summary="Получить список настроек проекта"
 )
 async def get_settings(
     session: AsyncSession = Depends(get_async_session)
-) -> list[BotSettingsOrm]:
+) -> list[SettingsReadSchema]:
     '''Эндпоинт получения всех настроек проекта.'''
     settings = await bot_settings_service.get_all(session)
     return settings
@@ -32,7 +32,7 @@ async def get_settings(
 async def get_one_setting(
     id: int,
     session: AsyncSession = Depends(get_async_session),
-) -> BotSettingsOrm | None:
+) -> SettingsReadSchema:
     '''Эндпоинт получения одной настройки проекта.'''
     setting: BotSettingsOrm | None = await bot_settings_service.get(session, id)
     return setting
@@ -46,7 +46,7 @@ async def change_setting(
     id: int,
     data_input: SettingsChangeSchema,
     session: AsyncSession = Depends(get_async_session),
-) -> BotSettingsOrm | None:
+) -> SettingsReadSchema:
     '''Эндпоинт изменения настройки проекта.'''
     setting = await bot_settings_service.setting_update(session, id, data_input)
     return setting

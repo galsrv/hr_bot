@@ -98,6 +98,8 @@ class UserService(BaseService):
         # Валидируем данные в БД. Это Pydantic не проверяет
         await self.is_username_available(session, data_input.username)
         await role_service.get(session, data_input.role_id)
+        await self.get(session, data_input.created_by_id)
+        data_input.updated_by_id = data_input.created_by_id
         new_user = await self.create(session, data_input)
         return new_user
 
@@ -112,7 +114,7 @@ class UserService(BaseService):
         if hasattr(data_input, 'role_id') and data_input.role_id is not None:
             await role_service.get(session, data_input.role_id)
 
-        new_user: UsersOrm = await self.update(session, id, data_input)
+        new_user = await self.update(session, id, data_input)
         return new_user
 
 user_service = UserService()

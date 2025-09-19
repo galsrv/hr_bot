@@ -36,6 +36,8 @@ class UsersOrm(AppBaseClass):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text('true'), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
+    created_by_id: Mapped['UsersOrm'] = mapped_column(Integer, ForeignKey('auth_user.id', ondelete='SET NULL'), nullable=True)
+    updated_by_id: Mapped['UsersOrm'] = mapped_column(Integer, ForeignKey('auth_user.id', ondelete='SET NULL'), nullable=True)
 
     role: Mapped[RolesOrm] = relationship(
         'RolesOrm',
@@ -46,9 +48,22 @@ class UsersOrm(AppBaseClass):
         'SessionsOrm',
         back_populates='user')
 
-    # @property
-    # def role_name(self) -> str:
-    #     return self.role.name if self.role else None
+    created_by: Mapped['UsersOrm'] = relationship(
+        'UsersOrm',
+        foreign_keys=[created_by_id, ],
+        lazy='joined',
+        # Если не ограничить глубину, можно запустить бескочненый цикл жадной загрузки
+        join_depth=1,
+        # Черная магия, но иначе отношение будет работать в обе стороны
+        # Без лямбды UsersOrm не определено к этому моменту
+        remote_side=lambda: [UsersOrm.id])
+
+    updated_by: Mapped['UsersOrm'] = relationship(
+        'UsersOrm',
+        foreign_keys=[updated_by_id, ],
+        lazy='joined',
+        join_depth=1,
+        remote_side=lambda: [UsersOrm.id])
 
     __order_by__ = (func.lower(username).asc(), )
 

@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.orm import declarative_base, declared_attr, mapped_column, Mapped
 
 from config import settings
-
+from log import sql_logger # noqa
 
 class PreBase:
     '''Базовый класс для всех моделей ORM.'''

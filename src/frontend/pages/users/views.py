@@ -3,7 +3,7 @@ from functools import partial
 import re
 from typing import Callable
 
-from fastapi import Depends, Request
+from fastapi import Depends
 from nicegui import APIRouter, ui
 
 from pages.layout import navbar
@@ -14,7 +14,7 @@ from pages.users.constants import(
     USER_PASSWORD_MIN_LENGTH,
     USERNAME_REGEXP
 )
-from pages.auth.service import auth_api_client
+from pages.dependencies import get_current_user, get_edit_users_permission
 from pages.users.service import users_api_client
 from pages.users.schemas import (
     UserReadSchema,
@@ -139,26 +139,6 @@ async def _save_user_button_handler(
     else:
         ui.notify(result['message'], type='negative')
 
-# async def get_permission(request: Request):
-#     session_id = request.cookies.get('session_id')
-
-#     user: UserReadSchema | None = await auth_api_client.get_user_by_session(session_id) if session_id else None
-
-#     if not user:
-#         ui.navigate.to(LOGIN_PAGE_URL)
-
-#     navbar(user)
-
-#     permission = user.role.can_edit_users if user else False
-
-#     return permission
-
-async def get_current_user(request: Request) -> UserReadSchema | None:
-    session_id = request.cookies.get('session_id')
-    return await auth_api_client.get_user_by_session(session_id) if session_id else None
-
-async def get_edit_users_permission(user: UserReadSchema = Depends(get_current_user)):
-    return user.role.can_edit_users if user else False
 
 
 @users_router.page('/', title='Пользователи')
@@ -167,15 +147,15 @@ async def users_list_page(
     role: int = None,
     is_active: bool = None,
     name: str = None,
-    user: UserReadSchema = Depends(get_current_user),
+    current_user: UserReadSchema = Depends(get_current_user),
     permission: bool = Depends(get_edit_users_permission),
 ):
     '''Страница со списком пользователей.'''
     # Создание ui-элементов нельзя вынести в зависимость
-    if not user:
+    if not current_user:
         ui.navigate.to(LOGIN_PAGE_URL)
-        return
-    navbar(user)
+
+    navbar(current_user)
 
     # Получаем список пользователей согласно фильтрам
     users_list: UsersListPageSchema | None = await users_api_client.get_users(page, role, is_active, name)
@@ -191,7 +171,7 @@ async def users_list_page(
     navigate_func: Callable = _user_list_filters(roles, role, is_active, name)
 
     # Выводим кнопку Создать нового пользователя
-    ui.button('Создать', on_click=lambda : ui.navigate.to('create')).bind_enabled_from(permission)
+    ui.button('Создать', on_click=lambda : ui.navigate.to('create')).visible = permission
 
     # Выводим список пользователей
     for user in users_list.items:
@@ -206,7 +186,7 @@ async def users_list_page(
                 ui.label('Активен').classes('text-subtitle2')
                 ui.label(str(user.is_active)).classes('text-subtitle2')
                 ui.button('ИЗМЕНИТЬ',
-                        on_click=lambda s_id=user.id: ui.navigate.to(f'{s_id}')).bind_enabled_from(permission)
+                        on_click=lambda s_id=user.id: ui.navigate.to(f'{s_id}')).visible = permission
 
     # Выводим кнопки пагинации
     if users_list.pages > 1:
@@ -216,21 +196,17 @@ async def users_list_page(
             on_change=lambda: navigate_func(current_page.value))
 
 @users_router.page('/create', title='Создание пользователя')
-async def user_create_page(request: Request):
-    user = None
-    session_id = request.cookies.get('session_id')
-
-    user: UserReadSchema | None = await auth_api_client.get_user_by_session(session_id) if session_id else None
-
-    if not user:
+async def user_create_page(
+    current_user: UserReadSchema = Depends(get_current_user),
+    permission: bool = Depends(get_edit_users_permission),
+):
+    if not current_user:
         ui.navigate.to(LOGIN_PAGE_URL)
-
-    navbar(user)
-
-    permission = user.role.can_edit_users if user else False
 
     if not permission:
         ui.navigate.to(USERS_PAGE_URL)
+
+    navbar(current_user)
 
     '''Страница создания пользователя.'''
     # Получаем список ролей для вывода опции в поле выбора
@@ -252,21 +228,18 @@ async def user_create_page(request: Request):
                 on_click=ui.navigate.back)
 
 @users_router.page('/{id}', title='Изменение пользователя')
-async def user_edit_page(id: int, request: Request):
+async def user_edit_page(
+    current_user: UserReadSchema = Depends(get_current_user),
+    permission: bool = Depends(get_edit_users_permission)
+):
     '''Страница изменения пользователя.'''
-    user = None
-    session_id = request.cookies.get('session_id')
-    user: UserReadSchema | None = await auth_api_client.get_user_by_session(session_id) if session_id else None
-
-    if not user:
+    if not current_user:
         ui.navigate.to(LOGIN_PAGE_URL)
-
-    navbar(user)
-
-    permission = user.role.can_edit_users if user else False
 
     if not permission:
         ui.navigate.to(USERS_PAGE_URL)
+
+    navbar(current_user)
 
     # Получаем данные пользователя и список ролей для вывода опции в поле выбора
     user_data: dict | None = await users_api_client.get_user(id)

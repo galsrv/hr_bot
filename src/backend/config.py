@@ -20,11 +20,5 @@ class Settings(BaseSettings):
         f'{os.getenv('POSTGRES_PASSWORD')}@'
         f'{os.getenv('POSTGRES_DB_HOST')}:{os.getenv('POSTGRES_DB_PORT')}/'
         f'{os.getenv('POSTGRES_DB')}')
-    # LOGS_FILE_PATH: str = 'logs/{time:YYYY-MM-DD}.log'
-    # LOGS_FORMAT: str = '[{level}] | {time:DD.MM.YYYY HH:mm:ss} {message}'
-    # SECRET_KEY: str = os.getenv('SECRET_KEY', 'default_secret_key')
-    # ACCESS_TOKEN_EXPIRES_DAYS: int = int(os.getenv('ACCESS_TOKEN_EXPIRES_DAYS', 30))
-    # ALGORITHM: str = os.getenv('ALGORITHM', 'HS256')
-
 
 settings = Settings()

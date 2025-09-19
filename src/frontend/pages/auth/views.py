@@ -3,6 +3,7 @@ import asyncio
 from fastapi import Request
 from nicegui import APIRouter, ui
 
+from log import logger
 from pages.layout import navbar
 from pages.auth.service import auth_api_client
 from pages.urls import (
@@ -43,6 +44,7 @@ async def _user_login_button_handler(
         ui.run_javascript(
             f'document.cookie = "session_id={result["id"]}; path=/; SameSite=Lax";')
 
+        logger.log('AUTH', f'Login by {login_data['username']}')   
         ui.notify(result['message'], type='positive')
         await asyncio.sleep(1)
         ui.navigate.to(SETTINGS_PAGE_URL)
@@ -80,6 +82,7 @@ async def user_logout(request: Request):
         'document.cookie = "session_id=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";')
     session_id = request.cookies.get('session_id')
     await auth_api_client.delete_session(session_id)
+    logger.log('AUTH', f'Session {session_id} was removed')  
     ui.navigate.to(LOGIN_PAGE_URL)
 
 @auth_router.page('/')

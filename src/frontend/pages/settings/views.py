@@ -1,11 +1,11 @@
 import asyncio
 from functools import partial
 
-from fastapi import Request
+from fastapi import Depends
 from nicegui import APIRouter, ui
 
 from pages.layout import navbar
-from pages.auth.service import auth_api_client
+from pages.dependencies import get_current_user, get_edit_settings_permission
 from pages.settings.constants import (
     SETTING_VALUE_MAX_LEN,
     SETTING_INT_MAX_VALUE,
@@ -65,18 +65,16 @@ async def _save_setting_button_handler(
         ui.notify(result['message'], type='negative')
 
 @settings_router.page('/', title='Настройки проекта')
-async def settings_page(request: Request):
-    '''Получаем настройки от бэкенда.'''
-    user = None
-    session_id = request.cookies.get('session_id')
-    user: UserReadSchema | None = await auth_api_client.get_user_by_session(session_id) if session_id else None
-
-    if not user:
+async def settings_list_page(
+    current_user: UserReadSchema = Depends(get_current_user),
+    permission: bool = Depends(get_edit_settings_permission),
+):
+    '''Выводим список настроек проекта.'''
+    # Создание ui-элементов нельзя вынести в зависимость
+    if not current_user:
         ui.navigate.to(LOGIN_PAGE_URL)
 
-    navbar(user)
-
-    permission = user.role.can_edit_settings if user else False
+    navbar(current_user)
 
     settings_list = await settings_api_client.get_settings()
     ui.item_label('Настройки').props('header').classes('text-bold text-h4')
@@ -88,24 +86,23 @@ async def settings_page(request: Request):
                 ui.label(setting['value']).classes('')
                 if permission:
                     ui.button('ИЗМЕНИТЬ',
-                            on_click=lambda s_id=setting["id"]: ui.navigate.to(f'{s_id}'))
+                            on_click=lambda s_id=setting["id"]: ui.navigate.to(f'{s_id}')).visible = permission
 
 @settings_router.page('/{id}', title='Изменение настройки')
-async def setting_page(id: int, request: Request):
+async def setting_page(
+    id: int,
+    current_user: UserReadSchema = Depends(get_current_user),
+    permission: bool = Depends(get_edit_settings_permission),
+):
     '''Получаем настройку от бэкенда.'''
-    user = None
-    session_id = request.cookies.get('session_id')
-    user: UserReadSchema | None = await auth_api_client.get_user_by_session(session_id) if session_id else None
-
-    if not user:
+    # Создание ui-элементов нельзя вынести в зависимость
+    if not current_user:
         ui.navigate.to(LOGIN_PAGE_URL)
-
-    navbar(user)
-
-    permission = user.role.can_edit_settings if user else False
 
     if not permission:
         ui.navigate.to(SETTINGS_PAGE_URL)
+
+    navbar(current_user)
 
     setting_data: dict | None = await settings_api_client.get_one_setting(id)
 

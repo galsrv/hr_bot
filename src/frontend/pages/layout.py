@@ -1,5 +1,3 @@
-from functools import wraps
-
 from nicegui import ui
 
 from pages.users.schemas import UserReadSchema
@@ -27,10 +25,3 @@ def navbar(user: UserReadSchema | None = None) -> None:
                 ui.link('Выйти', LOGOUT_PAGE_URL).classes('!text-white no-underline hover:!text-gray-300 text-lg')
             else:
                 ui.link('Войти', LOGIN_PAGE_URL).classes('!text-white no-underline hover:!text-gray-300 text-lg')
-
-def layout_decorator(func):
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        navbar()
-        await func(*args, **kwargs)
-    return wrapper

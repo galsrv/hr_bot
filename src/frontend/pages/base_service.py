@@ -1,6 +1,9 @@
 from aiohttp import ClientSession
 from fastapi import status
 
+from log import logger
+from pages.utils import url_shortener
+
 class BaseApiClient():
 
     async def _response_parser(self, response) -> dict:
@@ -22,6 +25,7 @@ class BaseApiClient():
         '''Получить данные от бэкенда.'''
         async with ClientSession() as session:
             async with session.get(url) as response:
+                logger.log('API_REQUEST', f'Method: GET, URL: {url_shortener(url)}, status: {response.status}')   
                 if response.status == status.HTTP_200_OK:
                     result = await response.json()
                     return result
@@ -31,16 +35,19 @@ class BaseApiClient():
         '''Создать запись на бэкенде.'''
         async with ClientSession() as session:
             async with session.post(url, json=data_input) as response:
+                logger.log('API_REQUEST', f'Method: POST, URL: {url_shortener(url)}, status: {response.status}')   
                 return await self._response_parser(response)
 
     async def patch(self, url: str, data_input: dict):
         '''Обновить данные записи на бэкенде.'''
         async with ClientSession() as session:
             async with session.patch(url, json=data_input) as response:
+                logger.log('API_REQUEST', f'Method: PATCH, URL: {url_shortener(url)}, status: {response.status}')   
                 return await self._response_parser(response)
 
     async def delete(self, url) -> dict | list[dict] | None:
         '''Удалить данне на бэкенде бэкенда.'''
         async with ClientSession() as session:
-            async with session.delete(url):
+            async with session.delete(url) as response:
+                logger.log('API_REQUEST', f'Method: DELETE, URL: {url_shortener(url)}, status: {response.status}')   
                 return None

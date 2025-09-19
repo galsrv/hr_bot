@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
@@ -41,6 +42,8 @@ class UserCreateSchema(UserBaseSchema):
                           repr=False)
     role_id: int
     is_active: Optional[bool] = True
+    created_by_id: int
+    updated_by_id: Optional[int] = None
 
 class UserUpdateSchema(UserBaseSchema):
     '''Класс изменения пользователя.'''
@@ -50,16 +53,26 @@ class UserUpdateSchema(UserBaseSchema):
                                     repr=False)
     role_id: Optional[int] = None
     is_active: Optional[bool] = None
+    updated_by_id: int
+
+class UserRelationshipSchema(BaseModel):
+    '''Класс пользователя для сериализации внутри ссылки.'''
+    id: int
+    username: str
 
 class UserReadSchema(BaseModel):
-    '''Класс чтения пользователя.'''
+    '''Класс  пользователя.'''
     id: int
     username: str
     is_active: bool
     role: RoleReadSchema
+    created_at: datetime
+    updated_at: datetime
+    created_by: UserRelationshipSchema | None = None
+    updated_by: UserRelationshipSchema | None = None
 
 class UserLoginSchema(BaseModel):
-    '''Класс чтения пользователя.'''
+    '''Класс логина пользователя.'''
     username: str
     password: str
 

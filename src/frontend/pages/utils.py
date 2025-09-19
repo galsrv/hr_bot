@@ -19,3 +19,6 @@ def build_url(base: str, **params) -> str:
     if not params_cleaned:
         return base
     return f'{base}?{urlencode(params_cleaned)}'
+
+def url_shortener(url: str) -> str:
+    return url if len(url) < 50 else url[:50] + '...' + url[-4:]

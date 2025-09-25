@@ -1,4 +1,4 @@
-from fastapi import HTTPException, status
+from typing import Any
 from log import logger
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,15 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 class BaseService:
 
     def __init__(self, model):
-        """Инициализация объекта класса."""
+        '''Инициализация объекта класса.'''
         self.model = model
 
     async def get(
         self,
         session: AsyncSession,
         obj_id: int,
-    ):
-        """Функция чтения единичной записи таблицы."""
+    ) -> Any | None:
+        '''Функция чтения единичной записи таблицы.'''
         query = select(self.model).where(self.model.id == obj_id)
         db_obj = await session.execute(query)
         db_obj = db_obj.scalars().first()
@@ -23,19 +23,13 @@ class BaseService:
         success = 'success' if db_obj else 'not found'
         logger.log('DB_ACCESS', f'Entry retrieve: model={self.model.__name__}, id={obj_id}, result={success}')
 
-        if db_obj is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail='Запрошенная запись не существует'
-            )
-
         return db_obj
 
     async def get_all(
         self,
         session: AsyncSession,
-    ):
-        """Метод чтения всех записей таблицы."""
+    ) -> list:
+        '''Метод чтения всех записей таблицы.'''
         query = select(self.model).order_by(*self.model.__order_by__)
         result = await session.execute(query)
         result = result.scalars().all()
@@ -53,11 +47,10 @@ class BaseService:
         return new_db_obj
 
     async def update(self,
-                       session: AsyncSession,
-                       id: int,
-                       data_input
+                     session: AsyncSession,
+                     db_obj,
+                     data_input
     ):
-        db_obj = await self.get(session, id)
         data_input: dict = data_input.model_dump(exclude_none=True)
         [setattr(db_obj, k, v) for k, v in data_input.items()]
 

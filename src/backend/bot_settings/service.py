@@ -14,7 +14,7 @@ class BotSettingsService(BaseService):
     def __init__(self):
         super().__init__(BotSettingsOrm)
 
-    async def setting_value_check(
+    async def _setting_value_check(
         self,
         int_type: int,
         new_value: str,
@@ -34,18 +34,33 @@ class BotSettingsService(BaseService):
                     detail=ERROR_MESSAGE_VALUE_INT
                 )
 
-    async def setting_update(self,
+    async def get_setting(self,
+        session: AsyncSession,
+        id: int,
+ ) -> BotSettingsOrm:
+        '''Получаем одну настройку проекта.'''
+        setting: BotSettingsOrm | None = await self.get(session, id)
+
+        if setting is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Запрошенная запись не существует'
+            )
+
+        return setting    
+
+    async def update_setting(self,
         session: AsyncSession,
         id: int,
         data_input: SettingsChangeSchema,
  ) -> BotSettingsOrm:
         '''Обновляем значение настройки проекта.'''
-        setting: BotSettingsOrm = await bot_settings_service.get(session, id)
+        setting: BotSettingsOrm = await self.get_setting(session, id)
 
         # Валидируем то, что не выловил Pydantic. Всё, что связано с данными в БД
-        await self.setting_value_check(setting.int_type, data_input.value)
+        await self._setting_value_check(setting.int_type, data_input.value)
 
-        setting = await self.update(session, id, data_input)
+        setting = await self.update(session, setting, data_input)
         return setting
 
 bot_settings_service = BotSettingsService()

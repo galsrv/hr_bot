@@ -46,9 +46,9 @@ class UsersApiClient(BaseApiClient):
         url = f'{settings.API_URL}/{self.MODULE_URL}/'
         return await self.post(url, data_input)
 
-    async def update_user(self, id: int, data_input: dict) -> dict:
+    async def update_user(self, data_input: dict) -> dict:
         '''Изменить пользователя.'''
-        url = f'{settings.API_URL}/{self.MODULE_URL}/{id}'
+        url = f'{settings.API_URL}/{self.MODULE_URL}/{data_input['id']}'
         return await self.patch(url, data_input)
 
 users_api_client = UsersApiClient()

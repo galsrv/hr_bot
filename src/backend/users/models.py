@@ -36,8 +36,8 @@ class UsersOrm(AppBaseClass):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text('true'), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
-    created_by_id: Mapped['UsersOrm'] = mapped_column(Integer, ForeignKey('auth_user.id', ondelete='SET NULL'), nullable=True)
-    updated_by_id: Mapped['UsersOrm'] = mapped_column(Integer, ForeignKey('auth_user.id', ondelete='SET NULL'), nullable=True)
+    created_by_id: Mapped[int] = mapped_column(Integer, ForeignKey('auth_user.id', ondelete='SET NULL'), nullable=True)
+    updated_by_id: Mapped[int] = mapped_column(Integer, ForeignKey('auth_user.id', ondelete='SET NULL'), nullable=True)
 
     role: Mapped[RolesOrm] = relationship(
         'RolesOrm',

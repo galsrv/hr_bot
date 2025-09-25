@@ -30,4 +30,5 @@ class SessionsOrm(AppBaseClass):
     user: Mapped[UsersOrm] = relationship(
         UsersOrm,
         back_populates='session',
-        lazy='joined')
+        lazy='joined',
+    )

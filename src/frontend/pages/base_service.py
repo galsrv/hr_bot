@@ -7,6 +7,9 @@ from pages.utils import url_shortener
 class BaseApiClient():
 
     async def _response_parser(self, response) -> dict:
+        if response.status >= status.HTTP_500_INTERNAL_SERVER_ERROR:
+            return {'OK': False, 'message': 'Произошла ошибка на стороне сервера'}
+
         response_dict = await response.json()
 
         if response.status not in (status.HTTP_200_OK, status.HTTP_201_CREATED):
@@ -25,10 +28,15 @@ class BaseApiClient():
         '''Получить данные от бэкенда.'''
         async with ClientSession() as session:
             async with session.get(url) as response:
-                logger.log('API_REQUEST', f'Method: GET, URL: {url_shortener(url)}, status: {response.status}')   
+                logger.log('API_REQUEST', f'Method: GET, URL: {url_shortener(url)}, status: {response.status}') 
+    
+                if response.status >= status.HTTP_500_INTERNAL_SERVER_ERROR:
+                    return {'OK': False, 'message': 'Ошибка получения данных'}
+    
                 if response.status == status.HTTP_200_OK:
                     result = await response.json()
                     return result
+    
                 return None
 
     async def post(self, url: str, data_input: dict) -> dict:

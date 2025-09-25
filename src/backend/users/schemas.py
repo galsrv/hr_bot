@@ -3,13 +3,13 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
+from users.utils import hash_password
 from users.constants import (
     USER_NAME_MIN_LENGTH,
     USER_NAME_MAX_LENGTH,
     USER_PASSWORD_MIN_LENGTH,
     USER_PASSWORD_MAX_LENGTH,
     USERNAME_REGEXP)
-from users.utils import hash_password
 
 
 class RoleReadSchema(BaseModel):
@@ -59,6 +59,7 @@ class UserRelationshipSchema(BaseModel):
     '''Класс пользователя для сериализации внутри ссылки.'''
     id: int
     username: str
+    is_active: bool
 
 class UserReadSchema(BaseModel):
     '''Класс  пользователя.'''

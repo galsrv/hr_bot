@@ -34,7 +34,7 @@ async def get_one_setting(
     session: AsyncSession = Depends(get_async_session),
 ) -> SettingsReadSchema:
     '''Эндпоинт получения одной настройки проекта.'''
-    setting: BotSettingsOrm | None = await bot_settings_service.get(session, id)
+    setting: BotSettingsOrm | None = await bot_settings_service.get_setting(session, id)
     return setting
 
 @botsettings_router.patch(
@@ -48,5 +48,5 @@ async def change_setting(
     session: AsyncSession = Depends(get_async_session),
 ) -> SettingsReadSchema:
     '''Эндпоинт изменения настройки проекта.'''
-    setting = await bot_settings_service.setting_update(session, id, data_input)
+    setting = await bot_settings_service.update_setting(session, id, data_input)
     return setting

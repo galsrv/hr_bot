@@ -1,4 +1,14 @@
-from pydantic import BaseModel
+from datetime import datetime
+from typing import Optional
+from pydantic import BaseModel, Field
+
+from pages.users.constants import (
+    USERNAME_REGEXP,
+    USER_NAME_MIN_LENGTH,
+    USER_NAME_MAX_LENGTH,
+    USER_PASSWORD_MIN_LENGTH,
+    USER_PASSWORD_MAX_LENGTH
+)
 
 class RoleReadSchema(BaseModel):
     '''Модель роли.'''
@@ -9,12 +19,21 @@ class RoleReadSchema(BaseModel):
     can_send_messages: bool
     can_edit_menu: bool
 
+class UserRelationshipSchema(BaseModel):
+    '''Класс пользователя для сериализации внутри ссылки.'''
+    id: int
+    username: str
+
 class UserReadSchema(BaseModel):
     '''Модель пользователя.'''
     id: int
     username: str
     is_active: bool
     role: RoleReadSchema
+    created_at: datetime
+    updated_at: datetime
+    created_by: UserRelationshipSchema | None = None
+    updated_by: UserRelationshipSchema | None = None
 
 class UsersListPageSchema(BaseModel):
     '''Модель страницы со списком пользователей.'''
@@ -22,3 +41,33 @@ class UsersListPageSchema(BaseModel):
     total: int
     page: int
     pages: int
+
+
+class UserCreateSchema(BaseModel):
+    '''Класс создания пользователя.'''
+    username: str = Field(pattern=USERNAME_REGEXP,
+                          min_length=USER_NAME_MIN_LENGTH,
+                          max_length=USER_NAME_MAX_LENGTH)
+    password: str = Field(min_length=USER_PASSWORD_MIN_LENGTH,
+                          max_length=USER_PASSWORD_MAX_LENGTH,
+                          repr=False)
+    role_id: int
+    is_active: Optional[bool] = True
+    created_by_id: int
+    updated_by_id: Optional[int] = None
+
+class UserUpdateSchema(BaseModel):
+    '''Класс изменения пользователя.'''
+    id: int
+    password: Optional[str] = Field(default=None,
+                                    min_length=USER_PASSWORD_MIN_LENGTH,
+                                    max_length=USER_PASSWORD_MAX_LENGTH,
+                                    repr=False)
+    role_id: Optional[int] = None
+    is_active: Optional[bool] = None
+    updated_by_id: int
+
+class UserLoginSchema(BaseModel):
+    '''Класс логина пользователя.'''
+    username: str = Field(min_length=1)
+    password: str = Field(min_length=1)

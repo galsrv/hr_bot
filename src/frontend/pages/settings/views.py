@@ -55,7 +55,7 @@ async def _save_setting_button_handler(
         ui.notify('Проверьте значения полей!', type='negative')
         return 
 
-    result = await settings_api_client.update_setting(setting_data['id'], setting_data)
+    result = await settings_api_client.update_setting(setting_data)
 
     if result['OK']:
         ui.notify(result['message'], type='positive')

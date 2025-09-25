@@ -1,10 +1,10 @@
 import asyncio
 from functools import partial
-import re
 from typing import Callable
 
 from fastapi import Depends
 from nicegui import APIRouter, ui
+from pydantic import ValidationError
 
 from pages.layout import navbar
 from pages.users.constants import(
@@ -12,13 +12,14 @@ from pages.users.constants import(
     USER_NAME_MIN_LENGTH,
     USER_PASSWORD_MAX_LENGTH,
     USER_PASSWORD_MIN_LENGTH,
-    USERNAME_REGEXP
 )
 from pages.dependencies import get_current_user, get_edit_users_permission
 from pages.users.service import users_api_client
 from pages.users.schemas import (
     UserReadSchema,
-    UsersListPageSchema
+    UsersListPageSchema,
+    UserCreateSchema,
+    UserUpdateSchema
 )
 from pages.urls import USERS_PAGE_URL, LOGIN_PAGE_URL
 from pages.utils import build_url
@@ -67,70 +68,112 @@ def _user_list_filters(roles: dict | None, role: int = None, is_active: bool = N
     return navigate_to_filtered_list
 
 def _validate_username(value: str | None) -> str | None:
-    '''Валидируем имя пользователя'''
-    if value and not (USER_NAME_MIN_LENGTH <= len(value) <= USER_NAME_MAX_LENGTH and re.match(USERNAME_REGEXP, value)):
-        return f'Введите значение из латинских символов длиной от {USER_NAME_MIN_LENGTH} до {USER_NAME_MAX_LENGTH} символов'
+    '''Валидируем имя пользователя в ходе ввода в поле формы'''
+    # Pydantic не предоставляет удобного способа валидировать отдельное поле модели
+    # Испробован метод из https://github.com/pydantic/pydantic/discussions/7367
+    try:
+        UserCreateSchema(username=value)
+    except ValidationError as e:
+        for error in e.errors():
+            if 'username' in error['loc']:
+                return f'Введите значение из латинских символов длиной от {USER_NAME_MIN_LENGTH} до {USER_NAME_MAX_LENGTH} символов'
 
 def _validate_password(value: str | None) -> str | None:
     '''Валидируем пароль'''
-    if value and not (USER_PASSWORD_MIN_LENGTH <= len(value) <= USER_PASSWORD_MAX_LENGTH):
+    # А здесь пробуем второй способ, еще более костыльный
+    try:
+        UserCreateSchema.__pydantic_validator__.validate_assignment(UserCreateSchema.model_construct(), 'password', value)
+    except ValidationError:
         return f'Введите значение не короче {USER_PASSWORD_MIN_LENGTH} и не длиннее {USER_PASSWORD_MAX_LENGTH}'
 
-def _user_details(user_data: dict, roles: list) -> list:
+async def _edit_user_form_handler(
+    user_data: dict,
+)-> None:
     '''Вывод полей формы создания/изменения пользователя'''
-    fields_to_validate = list()
-    # Поля формы связываем с ключами словаря
-    if user_data.get('id') and user_data['id']:
-        ui.label(f'id: {user_data['id']}').classes('text-subtitle2')
-    if user_data['username']:
-        ui.label(f'Имя: {user_data['username']}').classes('text-h6')
-    else:
-        username_input = ui.input(
-            label='Имя пользователя',
-            placeholder='Введите имя пользователя, состоящее из латинских букв',
-            validation=lambda value: _validate_username(value),
-            ).classes('w-full').bind_value_to(user_data, 'username')
-        fields_to_validate.append(username_input)
-    ui.select(
-        options=roles,
-        label='Роль',
-        value=user_data['role']['id']).bind_value_to(user_data, 'role_id')
-    is_active_checkbox = ui.checkbox(
-        text='Активен',
-        value=user_data['is_active'],
+    # Получаем список ролей для вывода опции в поле выбора
+    roles: dict | None = await users_api_client.get_roles()
+
+    with ui.grid(columns=2):
+        ui.label('id: ').classes('text-subtitle2')
+        ui.label(user_data['id']).classes('text-subtitle2')
+
+        ui.label('Имя пользователя: ').classes('text-subtitle2')
+        ui.label(user_data['username']).classes('text-h6')
+
+        # Поля формы связываем с ключами словаря
+        ui.label('Роль: ').classes('text-subtitle2')
+        ui.select(
+            options=roles,
+            value=user_data['role']['id']
+        ).bind_value_to(user_data['role'], 'id')
+
+        ui.label('Активен: ').classes('text-subtitle2')
+        ui.checkbox(
+            value=user_data['is_active'],
         ).bind_value_to(user_data, 'is_active')
-    # Активность пользователя можно выбрать только при изменении
-    is_active_checkbox.visible = bool(user_data.get('id', False))
-    password_input = ui.input(
-        label='Новый пароль',
-        placeholder=f'Введите новый пароль длиной не менее {USER_PASSWORD_MIN_LENGTH} знаков и не более {USER_PASSWORD_MAX_LENGTH} символов',
-        password=True,
-        password_toggle_button=True,
-        validation=lambda value: _validate_password(value)
+
+        ui.label('Пароль: ').classes('text-subtitle2')
+        ui.input(
+            placeholder=f'Введите значение длиной не менее {USER_PASSWORD_MIN_LENGTH} знаков и не более {USER_PASSWORD_MAX_LENGTH} символов',
+            password=True,
+            password_toggle_button=True,
+            validation=lambda value: _validate_password(value)
         ).bind_value_to(user_data, 'password')
-    fields_to_validate.append(password_input)
-    # Возвращаем объекты полей, которые необходимо проверить перед сохранением записи
-    return fields_to_validate
+
+    ui.label(f'Запись создана: {user_data['created_at']} пользователем {user_data['created_by']['username']}, изменена {user_data['updated_at']} пользователем {user_data['updated_by']['username']}').classes('text-subtitle2')
+
+async def _create_user_form_handler(
+    new_user_data: dict,
+)-> None:
+    '''Выводим форму создания пользователя'''
+    # Получаем список ролей для вывода опций в поле выбора
+    roles: dict | None = await users_api_client.get_roles()
+
+    # Поля формы связываем с ключами словаря
+    with ui.grid(columns=2):
+        ui.label('Имя пользователя: ').classes('text-subtitle2')
+        ui.input(
+            placeholder='Введите значение, состоящее из латинских букв',
+            validation=lambda value: _validate_username(value),
+        ).classes('w-full').bind_value_to(new_user_data, 'username')
+
+        ui.label('Роль: ').classes('text-subtitle2')
+        ui.select(
+            options=roles,
+            value=list(roles.keys())[0]
+        ).bind_value_to(new_user_data, 'role_id')
+
+        ui.label('Пароль: ').classes('text-subtitle2')
+        ui.input(
+            placeholder=f'Введите значение длиной не менее {USER_PASSWORD_MIN_LENGTH} знаков и не более {USER_PASSWORD_MAX_LENGTH} символов',
+            password=True,
+            password_toggle_button=True,
+            validation=lambda value: _validate_password(value)
+        ).bind_value_to(new_user_data, 'password')
 
 async def _save_user_button_handler(
     user_data: dict,
-    fields_to_validate: list,
-    action: str = 'create'
+    action: str = 'create',
 ) -> None:
-    # Валидируем поля ввода, избегаем отправки заведомо некорректных данных на бэкенд. 
-    # Валидация дублируется на бэке и фронте
-    if any([not f.validate() for f in fields_to_validate]):
-        ui.notify('Проверьте значения полей!', type='negative')
-        return 
-
+    '''Валидируем введенные данные и сохраняем пользователя'''
     if action == 'create':
-        result = await users_api_client.create_user(user_data)
+        try:
+            new_user = UserCreateSchema(**user_data)
+            result = await users_api_client.create_user(new_user.model_dump())
+        except ValidationError:
+            ui.notify('Проверьте значения полей!', type='negative')
+            return
 
     if action == 'update':
-        # Если при обновлении не заполнен пароль, игнорируем его
-        if user_data['password'] is None or user_data['password'] == '':
-            user_data.pop('password')
-        result = await users_api_client.update_user(user_data['id'], user_data)
+        try:
+            # Если при обновлении не заполнен пароль, игнорируем его
+            if user_data['password'] is None or user_data['password'] == '':
+                user_data.pop('password')
+            edited_user = UserUpdateSchema(**user_data)
+            result = await users_api_client.update_user(edited_user.model_dump())
+        except ValidationError:
+            ui.notify('Проверьте значения полей!', type='negative')
+            return
 
     if result['OK']:
         ui.notify(result['message'], type='positive')
@@ -138,8 +181,6 @@ async def _save_user_button_handler(
         ui.navigate.to(USERS_PAGE_URL)
     else:
         ui.notify(result['message'], type='negative')
-
-
 
 @users_router.page('/', title='Пользователи')
 async def users_list_page(
@@ -200,6 +241,7 @@ async def user_create_page(
     current_user: UserReadSchema = Depends(get_current_user),
     permission: bool = Depends(get_edit_users_permission),
 ):
+    '''Страница создания пользователя.'''
     if not current_user:
         ui.navigate.to(LOGIN_PAGE_URL)
 
@@ -208,27 +250,31 @@ async def user_create_page(
 
     navbar(current_user)
 
-    '''Страница создания пользователя.'''
-    # Получаем список ролей для вывода опции в поле выбора
-    roles: dict | None = await users_api_client.get_roles()
     # Инициализируем стартовые значения атрибутов пользователя
-    user_data = {'username': None, 'role': {'id': list(roles.keys())[0]}, 'is_active': True}
+    new_user_data = {
+        'username': None,
+        'password': None,
+        'role_id': None,
+        'is_active': True,
+        'created_by_id': current_user.id
+    }
 
     # Выводим заголовок
     ui.item_label('Новый пользователь').props('header').classes('text-bold text-h4')
     
     with ui.card().classes('w-full'):
-        # Выводим поля формы
-        fields_to_validate = _user_details(user_data=user_data, roles=roles)
+        # Выводим поля формы и связывает переменные
+        await _create_user_form_handler(new_user_data)
+        # Выводим кнопки Сохранить и Назад
         with ui.row():
-            # Выводим кнопки Сохранить и Назад
             ui.button('СОХРАНИТЬ',
-                on_click=partial(lambda: _save_user_button_handler(user_data, fields_to_validate, action='create')))
+                on_click=partial(lambda: _save_user_button_handler(new_user_data, action='create')))
             ui.button('НАЗАД',
                 on_click=ui.navigate.back)
 
 @users_router.page('/{id}', title='Изменение пользователя')
 async def user_edit_page(
+    id: int,
     current_user: UserReadSchema = Depends(get_current_user),
     permission: bool = Depends(get_edit_users_permission)
 ):
@@ -241,9 +287,9 @@ async def user_edit_page(
 
     navbar(current_user)
 
-    # Получаем данные пользователя и список ролей для вывода опции в поле выбора
+    # Получаем данные пользователя 
     user_data: dict | None = await users_api_client.get_user(id)
-    roles: dict | None = await users_api_client.get_roles()
+    user_data['updated_by_id'] = current_user.id
 
     if user_data is None:
         ui.notify('Указанный пользователь не существует', type='negative')
@@ -251,12 +297,12 @@ async def user_edit_page(
     else:
         # Выводим заголовки страницы
         ui.item_label('Изменение пользователя').props('header').classes('text-bold text-h4')
+        # Выводим поля формы пользователя
         with ui.card().classes('w-full'):
-            # Выводим поля пользователя
-            fields_to_validate = _user_details(user_data, roles)
+            await _edit_user_form_handler(user_data)
             with ui.row():
                 # Выводим кнопки Сохранить и Назад
                 ui.button(
                     'СОХРАНИТЬ',
-                    on_click=partial(lambda: _save_user_button_handler(user_data, fields_to_validate, action='update')))
+                    on_click=partial(lambda: _save_user_button_handler(user_data, action='update')))
                 ui.button('НАЗАД', on_click=ui.navigate.back)

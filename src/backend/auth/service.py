@@ -4,8 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from base_service import BaseService
 from auth.constants import(
-    ERROR_MESSAGE_WRONG_PASSWORD,
-    ERROR_MESSAGE_ENTRY_NOT_EXIST
+    ERROR_MESSAGE_WRONG_LOGIN_DATA,
 )
 from auth.models import SessionsOrm
 from auth.schemas import (
@@ -27,18 +26,13 @@ class SessionService(BaseService):
             login_schema: UserLoginSchema
     ) -> SessionsOrm:
         '''Аутентифицируем пользователя по имени и паролю.'''
-        user = await user_service.get_user_by_username(session, login_schema.username)
-        if not user:
+        user: UsersOrm | None = await user_service.get_user_by_username(session, login_schema.username)
+
+        # Пользователя нет, он неактивен или введен неверный пароль...
+        if not user or not user.is_active or not verify_password(login_schema.password, user.password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=ERROR_MESSAGE_ENTRY_NOT_EXIST) 
-
-        user_service.is_user_active(user)
-
-        if not verify_password(login_schema.password, user.password):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=ERROR_MESSAGE_WRONG_PASSWORD)
+                detail=ERROR_MESSAGE_WRONG_LOGIN_DATA) 
 
         user_session_schema = SessionCreateSchema(user_id=user.id)
         user_session = await session_service.create(session, user_session_schema)
@@ -50,9 +44,16 @@ class SessionService(BaseService):
             user_session_provided: SessionInSchema,
     ) -> UsersOrm:
         '''Получаем пользователя по сессии.'''
-        user_session: SessionsOrm = await session_service.get(session, user_session_provided.id)
-        user_service.is_user_active(user_session.user)
-        return user_session.user
+        user_session: SessionsOrm | None = await session_service.get(session, user_session_provided.id)
+
+        if not user_session or not user_session.user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=ERROR_MESSAGE_WRONG_LOGIN_DATA) 
+
+        # Тут какой-то нюанс жадной загрузки, объект user_session.user неполноценный, приходится отдельным запросом доставать
+        user: UsersOrm | None = await user_service.get(session, user_session.user.id)
+        return user
 
     async def delete_sessions_by_user(
             self,

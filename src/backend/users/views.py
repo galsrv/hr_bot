@@ -17,7 +17,7 @@ auth_router = APIRouter()
 @users_router.get(
     '/roles',
     response_model=list[RoleReadSchema],
-    summary="Получить список ролей"
+    summary='Получить список ролей'
 )
 async def retrieve_roles(
     session: AsyncSession = Depends(get_async_session)
@@ -29,7 +29,7 @@ async def retrieve_roles(
 @users_router.get(
     '/',
     response_model=Page[UserReadSchema],
-    summary="Получить список пользователей"
+    summary='Получить список пользователей'
 )
 async def retrieve_users(
     role: int | None = None,
@@ -46,34 +46,34 @@ async def retrieve_users(
 @users_router.get(
     '/{id}',
     response_model=UserReadSchema,
-    summary="Получить пользователя"
+    summary='Получить пользователя'
 )
 async def retrieve_user(
     id: int,
     session: AsyncSession = Depends(get_async_session)
 ) -> UserReadSchema:
     '''Эндпоинт получения пользователя.'''
-    user = await user_service.get(session, id)
+    user = await user_service.get_user(session, id)
     return user
 
 @users_router.post(
     '/',
     response_model=UserReadSchema,
     status_code=status.HTTP_201_CREATED,
-    summary="Создать нового пользователя"
+    summary='Создать нового пользователя'
 )
 async def create_user(
     new_user: UserCreateSchema,
     session: AsyncSession = Depends(get_async_session)
 ) -> UserReadSchema:
     '''Эндпоинт создания пользователя.'''
-    new_user = await user_service.user_create(session, new_user)
+    new_user = await user_service.create_user(session, new_user)
     return new_user
 
 @users_router.patch(
     '/{id}',
     response_model=UserReadSchema,
-    summary="Изменить пользователя"
+    summary='Изменить пользователя'
 )
 async def change_user(
     id: int,
@@ -81,6 +81,5 @@ async def change_user(
     session: AsyncSession = Depends(get_async_session)
 ) -> UserReadSchema:
     '''Эндпоинт изменения пользователя.'''
-    user = await user_service.user_update(session, id, data_input)
+    user = await user_service.update_user(session, id, data_input)
     return user
-

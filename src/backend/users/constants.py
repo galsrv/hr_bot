@@ -7,6 +7,7 @@ USER_PASSWORD_MAX_LENGTH = 255
 ERROR_MESSAGE_USERNAME_TAKEN = 'Указанное имя пользователя уже существует'
 
 ERROR_MESSAGE_ENTRY_NOT_EXIST = 'Указанная запись не найдена'
-ERROR_MESSAGE_INACTIVE_USER = 'Пользователь заблокирован'
+# ERROR_MESSAGE_INACTIVE_USER = 'Пользователь заблокирован'
+ERROR_MESSAGE_WRONG_LOGIN_DATA = 'Неверные данные для входа!'
 
 USERNAME_REGEXP = r'^[A-Za-z]+$'

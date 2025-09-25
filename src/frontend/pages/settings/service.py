@@ -14,9 +14,9 @@ class SettingsApiClient(BaseApiClient):
         url = f'{settings.API_URL}/{self.MODULE_URL}/{id}'
         return await self.get(url)
 
-    async def update_setting(self, id: int, data_input: dict) -> dict:
+    async def update_setting(self, data_input: dict) -> dict:
         '''Изменить значение настройки.'''
-        url = f'{settings.API_URL}/{self.MODULE_URL}/{id}'
+        url = f'{settings.API_URL}/{self.MODULE_URL}/{data_input['id']}'
         return await self.patch(url, data_input)
 
 settings_api_client = SettingsApiClient()

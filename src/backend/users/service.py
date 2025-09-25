@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from base_service import BaseService
 from users.constants import(
     ERROR_MESSAGE_USERNAME_TAKEN,
-    ERROR_MESSAGE_INACTIVE_USER
+    ERROR_MESSAGE_WRONG_LOGIN_DATA
 )
 from users.models import RolesOrm, UsersOrm
 from users.schemas import (
@@ -87,9 +87,24 @@ class UserService(BaseService):
         if not user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=ERROR_MESSAGE_INACTIVE_USER)
+                detail=ERROR_MESSAGE_WRONG_LOGIN_DATA)
 
-    async def user_create(
+    async def get_user(self,
+        session: AsyncSession,
+        id: int,
+ ) -> UsersOrm:
+        '''Получаем одну настройку проекта.'''
+        user: UsersOrm | None = await self.get(session, id)
+
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='Запрошенная запись не существует'
+            )
+
+        return user    
+
+    async def create_user(
             self,
             session: AsyncSession,
             data_input: UserCreateSchema
@@ -103,7 +118,7 @@ class UserService(BaseService):
         new_user = await self.create(session, data_input)
         return new_user
 
-    async def user_update(
+    async def update_user(
             self,
             session: AsyncSession,
             id: int,
@@ -114,8 +129,10 @@ class UserService(BaseService):
         if hasattr(data_input, 'role_id') and data_input.role_id is not None:
             await role_service.get(session, data_input.role_id)
 
-        new_user = await self.update(session, id, data_input)
-        return new_user
+        user: UsersOrm = await self.get_user(session, id)
+        user = await self.update(session, user, data_input)
+
+        return user
 
 user_service = UserService()
 

@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from auth.views import auth_router
 from bot_settings.views import botsettings_router
+from messages.views import messages_router
 from users.views import users_router
 
 main_router = APIRouter()
@@ -15,3 +16,5 @@ main_router.include_router(
 main_router.include_router(
     auth_router, prefix='/api/auth/sessions', tags=['auth'])
 
+main_router.include_router(
+    messages_router, prefix='/api/messages', tags=['messages'])

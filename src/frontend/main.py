@@ -3,6 +3,7 @@ from nicegui import app as nicegui_app, ui
 from config import settings
 from routers import main_router
 
+
 nicegui_app.include_router(main_router)
 
 ui.run(
@@ -12,4 +13,5 @@ ui.run(
     reload=False if settings.PROD_ENVIRONMENT else True,
     favicon='static/favicon.ico',
     show=False,
+    storage_secret=settings.SECRET_KEY,
 )

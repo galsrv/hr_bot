@@ -1,11 +1,14 @@
 import asyncio
 
-from fastapi import Request
+from fastapi import Depends, Request
 from nicegui import APIRouter, ui
+from pydantic import ValidationError
 
 from log import logger
 from pages.layout import navbar
 from pages.auth.service import auth_api_client
+from pages.dependencies import get_current_user
+from pages.users.schemas import UserReadSchema, UserLoginSchema
 from pages.urls import (
     SETTINGS_PAGE_URL,
     AUTH_PAGE_URL,
@@ -14,7 +17,7 @@ from pages.urls import (
 
 auth_router = APIRouter(prefix=AUTH_PAGE_URL)
 
-def _user_login_form(login_data: dict) -> list:
+def _user_login_form(login_data: dict) -> None:
     '''Вывод полей формы логина пользователя'''
     with ui.row():
         ui.input(
@@ -33,9 +36,12 @@ async def _user_login_button_handler(
     login_data: dict,
 ) -> None:
     '''Аутентифицируем пользователя и получаем номер сессии'''
-    if any([v is None or v == '' for v in login_data.values()]):
-        ui.notify('Проверьте значения полей!', type='negative')
-        return 
+    try:
+        user_to_log_in = UserLoginSchema(**login_data)
+        result = await auth_api_client.user_login(user_to_log_in.model_dump())
+    except ValidationError:
+        ui.notify('Все поля обязательны для ввода!', type='negative')
+        return
 
     result = await auth_api_client.user_login(login_data)
 
@@ -52,17 +58,14 @@ async def _user_login_button_handler(
         ui.notify(result['message'], type='negative')
 
 @auth_router.page('/login', title='Аутентификация')
-async def user_login(request: Request):
-    '''Страница создания пользователя.'''
-    user = None
-    session_id = request.cookies.get('session_id')
-    if session_id:
-        user = await auth_api_client.get_user_by_session(session_id)
-
-    if user:
+async def user_login(
+    current_user: UserReadSchema | None = Depends(get_current_user),
+):
+    '''Страница kjubyf.'''
+    if current_user:
         ui.navigate.to(SETTINGS_PAGE_URL)
 
-    navbar(user)
+    navbar(current_user)
     # Инициализируем стартовые значения атрибутов пользователя
     login_data = {'username': None, 'password': None}
 

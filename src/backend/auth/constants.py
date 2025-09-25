@@ -2,8 +2,6 @@ SESSION_DURATION_IN_DAYS = 3
 SESSION_CLEANUP_FREQ_IN_HOURS = 1
 SESSION_ID_LENGTH = 64
 
-ERROR_MESSAGE_WRONG_PASSWORD = 'Введен неверный пароль'
-ERROR_MESSAGE_INACTIVE_USER = 'Пользователь заблокирован'
-ERROR_MESSAGE_ENTRY_NOT_EXIST = 'Указанная запись не найдена'
+ERROR_MESSAGE_WRONG_LOGIN_DATA = 'Неверные данные для входа!'
 
 TOKEN_HEX_BASE = 32

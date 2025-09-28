@@ -12,7 +12,7 @@ Stack
 
 Architecture
 ======
-![alt text](https://github.com/galsrv/hr_bot/infra/arc.png "Project architecture")
+![alt text](https://github.com/galsrv/hr_bot/blob/main/infra/arc.png "Project architecture")
 
 Deployment
 ======

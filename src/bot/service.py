@@ -1,17 +1,12 @@
 import asyncio
 from http import HTTPStatus
-import os
 
 from aiohttp import ClientSession
-from dotenv import load_dotenv
+
+from config import settings
 
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '../../infra/.env')
-load_dotenv(dotenv_path)
-
-API_HOST = os.getenv('API_HOST')
-API_PORT = os.getenv('API_PORT')
-API_URL = f'{API_HOST}:{API_PORT}/api'
+API_URL = f'{settings.API_HOST}:{settings.API_PORT}/api'
 
 class ApiClient():
 

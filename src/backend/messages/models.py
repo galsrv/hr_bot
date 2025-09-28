@@ -27,7 +27,7 @@ class MessagesOrm(AppBaseClass):
     employee: Mapped['EmployeesOrm'] = relationship(
         'EmployeesOrm',
         lazy='joined',
-        back_populates='messages'
+        # back_populates='messages'
     )
 
     __order_by__ = (func.lower(created_at).asc(), )
@@ -43,7 +43,7 @@ class EmployeesOrm(AppBaseClass):
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
     updated_by_id: Mapped[int] = mapped_column(Integer, ForeignKey('auth_user.id', ondelete='SET NULL'), server_default=t('null'), default=None, nullable=True) # pyright: ignore[reportUndefinedVariable] # noqa: F821
 
-    messages: Mapped[list['MessagesOrm']] = relationship(
-        'MessagesOrm',
-        lazy='selectin',
-    )
+    # messages: Mapped[list['MessagesOrm']] = relationship(
+    #     'MessagesOrm',
+    #     lazy='selectin',
+    # )

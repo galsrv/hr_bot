@@ -1,19 +1,13 @@
 import asyncio
-import os
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message
-from dotenv import load_dotenv
 
+from config import settings as s
 from service import api_client
-
-dotenv_path = os.path.join(os.path.dirname(__file__), '../../infra/.env')
-load_dotenv(dotenv_path)
-
-TOKEN = os.getenv('TELEGRAM_BOT_TOKEN', '')
 
 dp = Dispatcher()
 
@@ -40,8 +34,11 @@ async def echo_handler(message: Message) -> None:
         await message.answer('Nice try!')
 
 
-async def main() -> None:
-    bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+async def main():
+    bot = Bot(
+        token=s.TOKEN,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    )
 
     await dp.start_polling(bot)
 

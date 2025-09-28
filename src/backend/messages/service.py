@@ -1,8 +1,8 @@
 from fastapi import HTTPException, status
-# from fastapi_pagination import Page, Params
-# from fastapi_pagination.ext.sqlalchemy import paginate
+from fastapi_pagination import Page, Params
+from fastapi_pagination.ext.sqlalchemy import paginate
 from loguru import logger
-from sqlalchemy import update
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +17,7 @@ from messages.models import MessagesOrm, EmployeesOrm
 from messages.schemas import (
     EmployeeCreareSchema,
     EmployeeChangeSchema,
+    EmployeeChatSchema,
     MessageCreateSchema,
 )
 from users.models import UsersOrm
@@ -90,10 +91,7 @@ class MessagesService(BaseService):
             data_input: MessageCreateSchema
     ) -> MessagesOrm:
         '''Создаем новое сообщение.'''
-        try:
-            employee = await employee_service.get_employee(session, data_input.employee_id)
-        except HTTPException:
-            employee = await employee_service.create_employee(session, data_input.employee_id)
+        employee = await employee_service.get_employee(session, data_input.employee_id)
 
         # Если пользователь заблокирован 
         if employee.is_banned:
@@ -101,16 +99,16 @@ class MessagesService(BaseService):
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=ERROR_MESSAGE_USER_IS_BANNED)
 
-        if data_input.manager_id:
-            manager: UsersOrm | None = user_service.get(session, data_input.manager_id)
+        if data_input.manager_id is not None:
+            manager: UsersOrm | None = await user_service.get(session, data_input.manager_id)
 
-            # Если указанный менеджер не существуе или не имеет полномочий:
+            # Если указанный менеджер не существует или не имеет полномочий:
             if not manager or not manager.is_active or not manager.role.can_send_messages:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail=ERROR_MESSAGE_NO_PERMISSION)
 
-        data_input.is_read = True
+            data_input.is_read = True
 
         new_message: MessagesOrm = await self.create(session, data_input)
         return new_message
@@ -125,5 +123,22 @@ class MessagesService(BaseService):
         result = await session.execute(stmt)
         await session.commit()
         logger.log('DB_ACCESS', f'Entry change: model={self.model.__name__}, t_id={employee_id}, entries affected={result.rowcount}')
+
+    async def get_employee_chat(
+            self,
+            session: AsyncSession,
+            id: int,
+            page_params: Params,
+    ) -> EmployeeChatSchema:
+        employee: EmployeesOrm | None = await employee_service.get_employee(session, id)
+
+        query = select(MessagesOrm).where(MessagesOrm.employee_id == employee.id)
+        messages: Page = await paginate(session, query, page_params)
+
+        # Собираем структуру с вложенной пагинацией
+        employee.messages = messages
+        chat_schema = EmployeeChatSchema.model_validate(employee)
+
+        return chat_schema
 
 messages_service = MessagesService()

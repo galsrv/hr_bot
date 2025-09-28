@@ -1,5 +1,6 @@
 from datetime import datetime
-from pydantic import BaseModel, Field
+from fastapi_pagination import Page
+from pydantic import BaseModel, ConfigDict, Field
 
 from users.schemas import UserRelationshipSchema
 
@@ -15,6 +16,11 @@ class EmployeeReadSchema(BaseModel):
     updated_at: datetime
     updated_by_id: int | None
 
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={datetime: lambda v: v.strftime("%d-%m-%Y %H:%M:%S")}
+    )
+
 class EmployeeChangeSchema(BaseModel):
     is_banned: bool
     updated_by_id: int
@@ -22,7 +28,7 @@ class EmployeeChangeSchema(BaseModel):
 class MessageCreateSchema(BaseModel):
     employee_id: int
     text: str
-    manager_id: int
+    manager_id: int | None
     is_read: bool | None = False
 
 class MessageReadSchema(BaseModel):
@@ -33,6 +39,14 @@ class MessageReadSchema(BaseModel):
     created_at: datetime
     is_read: bool
 
-class EmployeeChatSchema(EmployeeReadSchema):
-    messages: list[MessageReadSchema]
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={datetime: lambda v: v.strftime("%d-%m-%Y %H:%M:%S")}
+    )
 
+class EmployeeChatSchema(EmployeeReadSchema):
+    messages: Page[MessageReadSchema]
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )

@@ -61,6 +61,10 @@ class UserRelationshipSchema(BaseModel):
     username: str
     is_active: bool
 
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
 class UserReadSchema(BaseModel):
     '''Класс  пользователя.'''
     id: int
@@ -71,6 +75,11 @@ class UserReadSchema(BaseModel):
     updated_at: datetime
     created_by: UserRelationshipSchema | None = None
     updated_by: UserRelationshipSchema | None = None
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={datetime: lambda v: v.strftime("%d-%m-%Y %H:%M:%S")}
+    )
 
 class UserLoginSchema(BaseModel):
     '''Класс логина пользователя.'''

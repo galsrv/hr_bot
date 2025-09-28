@@ -20,5 +20,7 @@ class Settings(BaseSettings):
         f'{os.getenv('POSTGRES_PASSWORD')}@'
         f'{os.getenv('POSTGRES_DB_HOST')}:{os.getenv('POSTGRES_DB_PORT')}/'
         f'{os.getenv('POSTGRES_DB')}')
+    TELEGRAM_API_URL: str = os.getenv('TELEGRAM_API_URL', '')
+    TELEGRAM_BOT_TOKEN: str = os.getenv('TELEGRAM_BOT_TOKEN', '')
 
 settings = Settings()

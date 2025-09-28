@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status
+from fastapi_pagination import Params
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_async_session
@@ -22,7 +23,7 @@ messages_router = APIRouter()
     status_code=status.HTTP_201_CREATED,
     summary='Создать сотрудника'
 )
-async def create_employee(
+async def create_or_get_employee(
     data_input: EmployeeCreareSchema,
     session: AsyncSession = Depends(get_async_session)
 ) -> EmployeeReadSchema:
@@ -77,10 +78,11 @@ async def create_message(
 )
 async def get_employee_chat(
     id: int,
+    page_params: Params = Depends(),
     session: AsyncSession = Depends(get_async_session)
 ) -> EmployeeChatSchema:
     '''Получаем чаты с сотрудником.'''
-    employee_chat: EmployeesOrm | None = await messages_service.get(session, id)
+    employee_chat = await messages_service.get_employee_chat(session, id, page_params)
     return employee_chat
 
 @messages_router.post(

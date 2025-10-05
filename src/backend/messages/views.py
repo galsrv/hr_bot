@@ -28,7 +28,7 @@ async def create_or_get_employee(
     session: AsyncSession = Depends(get_async_session)
 ) -> EmployeeReadSchema:
     '''Создаем нового сотрудника.'''
-    new_employee = await employee_service.create_employee(session, data_input)
+    new_employee = await employee_service.get_or_create_employee(session, data_input)
     return new_employee
 
 @messages_router.get(
@@ -61,6 +61,7 @@ async def change_employee(
 @messages_router.post(
     '/',
     response_model=MessageReadSchema,
+    status_code=status.HTTP_201_CREATED,
     summary='Отправить сообщение или ответ'
 )
 async def create_message(

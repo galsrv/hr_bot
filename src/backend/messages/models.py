@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Boolean, DateTime, Integer, ForeignKey, String, func, text as t
+from sqlalchemy import BigInteger, Boolean, DateTime, Integer, ForeignKey, String, func, text as t
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import AppBaseClass
@@ -13,7 +13,7 @@ class MessagesOrm(AppBaseClass):
     '''Модель таблицы сообщений.'''
     __tablename__ = 'messages'
 
-    employee_id: Mapped[int] = mapped_column(Integer, ForeignKey('employees.id', ondelete='CASCADE'), nullable=False)
+    employee_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('employees.id', ondelete='CASCADE'), nullable=False)
     text: Mapped[str] = mapped_column(String(MESSAGE_TEXT_MAX_LENGTH))
     manager_id: Mapped[int] = mapped_column(Integer, ForeignKey('auth_user.id', ondelete='SET NULL'), nullable=True)  # pyright: ignore[reportUndefinedVariable] # noqa: F821
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
@@ -36,7 +36,7 @@ class EmployeesOrm(AppBaseClass):
     '''Модель таблицы сотрудников.'''
     __tablename__ = 'employees'
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=False)
     name: Mapped[str] = mapped_column(String(EMPLOYEE_NAME_MAX_LENGTH), nullable=True)
     is_banned: Mapped[bool] = mapped_column(Boolean, server_default=t('false'), default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)

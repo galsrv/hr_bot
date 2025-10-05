@@ -28,7 +28,7 @@ class EmployeeChangeSchema(BaseModel):
 class MessageCreateSchema(BaseModel):
     employee_id: int
     text: str
-    manager_id: int | None
+    manager_id: int | None = None
     is_read: bool | None = False
 
 class MessageReadSchema(BaseModel):

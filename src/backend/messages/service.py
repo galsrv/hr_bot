@@ -3,13 +3,11 @@ from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import paginate
 from loguru import logger
 from sqlalchemy import select, update
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from base_service import BaseService
 from messages.constants import (
     ERROR_MESSAGE_USER_IS_BANNED,
-    ERROR_MESSAGE_EMPLOYEE_EXISTS,
     ERROR_MESSAGE_EMPLOYEE_NOT_EXIST,
     ERROR_MESSAGE_NO_PERMISSION,
 )
@@ -27,20 +25,23 @@ class EmployeeService(BaseService):
     def __init__(self):
         super().__init__(EmployeesOrm)
 
-    async def create_employee(
+    async def get_or_create_employee(
             self,
             session: AsyncSession,
             data_input: EmployeeCreareSchema
     ) -> EmployeesOrm:
-        '''Создаем нового пользователя.'''
+        '''Получаем пользователя или создаем нового.'''
         try:
-            new_employee: EmployeesOrm = await self.create(session, data_input)
-        except IntegrityError:
-            logger.log('DB_ACCESS', f'Entry create error: model={EmployeesOrm.__name__}, id={data_input.id}')
+            employee: EmployeesOrm = await self.get_employee(session, data_input.id)
+        except HTTPException:
+            employee: EmployeesOrm = await self.create(session, data_input)
+            
+        if employee.is_banned:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=ERROR_MESSAGE_EMPLOYEE_EXISTS)
-        return new_employee
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=ERROR_MESSAGE_NO_PERMISSION)
+
+        return employee
 
     async def get_employee(
             self,

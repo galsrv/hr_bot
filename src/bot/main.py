@@ -1,47 +1,38 @@
 import asyncio
-
-from aiogram import Bot, Dispatcher
+from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.filters import CommandStart
-from aiogram.types import Message
 
 from config import settings as s
-from service import api_client
-
-dp = Dispatcher()
-
-
-@dp.message(CommandStart())
-async def command_start_handler(message: Message) -> None:
-    '''Обработчик команды /start.'''
-    settings = await api_client.get_settings()
-    await message.answer(str(settings))
-
-
-@dp.message()
-async def echo_handler(message: Message) -> None:
-    '''
-    Handler will forward receive a message back to the sender
-
-    By default, message handler will handle all message types (like a text, photo, sticker etc.)
-    '''
-    try:
-        # Send a copy of the received message
-        await message.send_copy(chat_id=message.chat.id)
-    except TypeError:
-        # But not all the types is supported to be copied so need to handle it
-        await message.answer('Nice try!')
+from core.dispatcher import dispatcher
+from core.log import logger
+from core.middleware import register_middlewares
+from core.startup import register_startup
+from core.webhooks import setup_webhook
 
 
 async def main():
     bot = Bot(
         token=s.TOKEN,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-    )
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+    await bot.set_my_commands(s.COMMANDS)
 
-    await dp.start_polling(bot)
+    # Регистрируем middleware
+    register_middlewares(dispatcher)
 
+    # Регистрируем функцию для запуска на старте бота
+    register_startup(dispatcher)
+
+    if s.PROD_ENVIRONMENT:
+        # В проде работаем через вебхуки
+        logger.info('⚙️  Running in PRODUCTION mode (Webhook enabled)')
+        await setup_webhook(bot, dispatcher)
+    else:
+        # В деве/тесте работаем с пуллингом
+        logger.info('⚙️  Running in DEVELOPMENT mode (Polling enabled)')
+        await dispatcher.start_polling(
+            bot,
+            allowed_updates=s.ALLOWED_UPDATES,)
 
 if __name__ == '__main__':
     asyncio.run(main())

@@ -1,5 +1,4 @@
 import asyncio
-from math import ceil
 from http import HTTPStatus
 
 from aiohttp import ClientSession
@@ -7,37 +6,8 @@ from core.log import logger
 
 from config import settings as s
 
-menu = [
-    {'id': 1, 'button_text': 'Отпуск', 'answer': 'Напишите заявление чтобы уйти в отпуск'},
-    {'id': 2, 'button_text': 'Больничный', 'answer': 'Оповестите отдел кадров об уходе на больничный'},
-    {'id': 3, 'button_text': 'Увольнение', 'answer': 'Напишите заявление чтобы уволиться по собственному желанию'},
-    {'id': 4, 'button_text': 'Зарплата', 'answer': 'Заработная плата выплачивается 5 и 20 числа каждого месяца'},
-    {'id': 5, 'button_text': 'Премия', 'answer': 'Премия выплачивается по итогам года'},
-    {'id': 6, 'button_text': 'Переработки', 'answer': 'Переработки оплачиваются согласно Политике Компании'},
-    {'id': 7, 'button_text': 'Льготы', 'answer': 'Сотрудник имеет право на ряд льгот'},
-    {'id': 8, 'button_text': 'Связь', 'answer': 'Сотрудник имеет право на корпоративную связь'},
-    {'id': 9, 'button_text': 'Учеба', 'answer': 'Сотрудник может пройти дополнительное обучение'},
-    {'id': 10, 'button_text': 'Развитие', 'answer': 'Сотруднику предоставляются возможности для развития'},
-]
-
-def _get_menu_page(page: int, page_size: int):
-    # logger.debug(page)
-    # logger.debug(menu[page_size * (page - 1): page_size * page])
-    return {
-        'items': menu[page_size * (page - 1): page_size * page],
-        'page': page,
-        'pages': ceil(len(menu)/page_size),
-        'total': len(menu)
-    }
-
-def _get_menu_item(id: int) -> dict | None:
-    for el in menu:
-        if el['id'] == id:
-            return el
-
 class ApiClientException(Exception):
     pass
-
 
 class ApiClient():
     '''Класс функций api-клиента'''
@@ -76,6 +46,32 @@ class ApiClient():
                 return None
 
     @timeout_decorator
+    async def get_menu_page(self, page: int = 1, size: int = 4) -> dict | None:
+        '''Получить список элементов меню от бэкенда.'''
+        url = f'{self.API_URL}/menu/?page={page}&size={size}'
+
+        async with ClientSession() as session:
+            async with session.get(url) as response:
+                logger.log('API_REQUEST', f'Request to {url}, reponse status {response.status}')
+                if response.status == HTTPStatus.OK:
+                    result = await response.json()
+                    return result
+                return None
+
+    @timeout_decorator
+    async def get_menu_item(self, id: int) -> dict | None:
+        '''Получить элемент меню от бэкенда.'''
+        url = f'{self.API_URL}/menu/{id}'
+
+        async with ClientSession() as session:
+            async with session.get(url) as response:
+                logger.log('API_REQUEST', f'Request to {url}, reponse status {response.status}')
+                if response.status == HTTPStatus.OK:
+                    result = await response.json()
+                    return result
+                return None
+
+    @timeout_decorator
     async def get_or_create_employee(self, id, name) -> dict | None:
         '''Получить сотрудника бэкенда.'''
         url = f'{self.API_URL}/messages/employees/'
@@ -91,7 +87,7 @@ class ApiClient():
 
     @timeout_decorator
     async def send_message(self, text, author) -> bool:
-        '''Получить список настроек от бэкенда.'''
+        '''Отправить сообщение сотрудника на бэкенд.'''
         url = f'{self.API_URL}/messages/'
         data = {'employee_id': author, 'text': text}
 

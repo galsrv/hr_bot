@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from pages.users.constants import (
     USERNAME_REGEXP,
@@ -9,6 +9,21 @@ from pages.users.constants import (
     USER_PASSWORD_MIN_LENGTH,
     USER_PASSWORD_MAX_LENGTH
 )
+
+class CustomDateFormat:
+    '''Своего рода Миксин для переиспользования.'''
+
+    @computed_field
+    def created_at_str(self) -> str | None:
+        '''Кастомный формат даты'''
+        if hasattr(self, 'created_at'):
+            return self.created_at.strftime("%d-%m-%Y %H:%M:%S")
+
+    @computed_field
+    def updated_at_str(self) -> str | None:
+        '''Кастомный формат даты'''
+        if hasattr(self, 'updated_at'):
+            return self.updated_at.strftime("%d-%m-%Y %H:%M:%S")
 
 class RoleReadSchema(BaseModel):
     '''Модель роли.'''
@@ -24,7 +39,7 @@ class UserRelationshipSchema(BaseModel):
     id: int
     username: str
 
-class UserReadSchema(BaseModel):
+class UserReadSchema(BaseModel, CustomDateFormat):
     '''Модель пользователя.'''
     id: int
     username: str
@@ -34,6 +49,9 @@ class UserReadSchema(BaseModel):
     updated_at: datetime
     created_by: UserRelationshipSchema | None = None
     updated_by: UserRelationshipSchema | None = None
+
+    model_config = ConfigDict(
+        from_attributes=True,)
 
 class UsersListPageSchema(BaseModel):
     '''Модель страницы со списком пользователей.'''

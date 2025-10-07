@@ -68,3 +68,11 @@ class BaseService:
         await session.execute(query)
         await session.commit()
         logger.log('DB_ACCESS', f'Entry deletion: model={self.model.__name__}, id={obj_id}')
+
+    async def delete_all(self,
+                     session: AsyncSession,
+    ) -> None:
+        query = delete(self.model)
+        await session.execute(query)
+        await session.commit()
+        logger.log('DB_ACCESS', f'All data from model={self.model.__name__} was deleted')

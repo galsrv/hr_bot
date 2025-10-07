@@ -11,7 +11,7 @@ from users.constants import (
 )
 
 class RolesOrm(AppBaseClass):
-    """Модель таблицы ролей."""
+    '''Модель таблицы ролей.'''
     __tablename__ = 'auth_role'
 
     name: Mapped[str] = mapped_column(String(USER_NAME_MAX_LENGTH), nullable=False, unique=True)
@@ -27,7 +27,7 @@ class RolesOrm(AppBaseClass):
     __order_by__ = (name.asc(), )
 
 class UsersOrm(AppBaseClass):
-    """Модель таблицы пользователей."""
+    '''Модель таблицы пользователей.'''
     __tablename__ = 'auth_user'
     
     username: Mapped[str] = mapped_column(String(USER_NAME_MAX_LENGTH), nullable=False, unique=True)

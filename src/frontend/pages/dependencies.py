@@ -13,3 +13,9 @@ async def get_edit_users_permission(user: UserReadSchema = Depends(get_current_u
 
 async def get_edit_settings_permission(user: UserReadSchema = Depends(get_current_user)):
     return user.role.can_edit_settings if user else False
+
+async def get_send_messages_permission(user: UserReadSchema = Depends(get_current_user)):
+    return user.role.can_send_messages if user else False
+
+async def get_edit_menu_permission(user: UserReadSchema = Depends(get_current_user)):
+    return user.role.can_edit_menu if user else False

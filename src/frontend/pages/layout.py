@@ -7,6 +7,7 @@ from pages.urls import (
     USERS_PAGE_URL,
     LOGIN_PAGE_URL,
     LOGOUT_PAGE_URL,
+    MESSAGES_PAGE_URL,
 )
 
 def navbar(user: UserReadSchema | None = None) -> None:
@@ -17,7 +18,7 @@ def navbar(user: UserReadSchema | None = None) -> None:
             'gap-4 sm:gap-10 p-1 w-full'
         ):
             ui.link('Меню', MENU_PAGE_URL).classes('!text-white no-underline hover:!text-gray-300 text-lg')
-            ui.link('Сообщения', '/messages').classes('!text-white no-underline hover:!text-gray-300 text-lg')
+            ui.link('Сообщения', MESSAGES_PAGE_URL).classes('!text-white no-underline hover:!text-gray-300 text-lg')
             ui.link('Настройки', SETTINGS_PAGE_URL).classes('!text-white no-underline hover:!text-gray-300 text-lg')
             ui.link('Пользователи', USERS_PAGE_URL).classes('!text-white no-underline hover:!text-gray-300 text-lg')
             if user:

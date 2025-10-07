@@ -2,6 +2,7 @@ from datetime import datetime
 from fastapi_pagination import Page
 from pydantic import BaseModel, ConfigDict, Field
 
+from messages.constants import MESSAGE_TEXT_MAX_LENGTH
 from users.schemas import UserRelationshipSchema
 
 class EmployeeCreareSchema(BaseModel):
@@ -16,10 +17,7 @@ class EmployeeReadSchema(BaseModel):
     updated_at: datetime
     updated_by_id: int | None
 
-    model_config = ConfigDict(
-        from_attributes=True,
-        json_encoders={datetime: lambda v: v.strftime("%d-%m-%Y %H:%M:%S")}
-    )
+    model_config = ConfigDict(from_attributes=True)
 
 class EmployeeChangeSchema(BaseModel):
     is_banned: bool
@@ -27,7 +25,7 @@ class EmployeeChangeSchema(BaseModel):
 
 class MessageCreateSchema(BaseModel):
     employee_id: int
-    text: str
+    text: str = Field(min_length=1, max_length=MESSAGE_TEXT_MAX_LENGTH)
     manager_id: int | None = None
     is_read: bool | None = False
 
@@ -40,13 +38,20 @@ class MessageReadSchema(BaseModel):
     is_read: bool
 
     model_config = ConfigDict(
-        from_attributes=True,
-        json_encoders={datetime: lambda v: v.strftime("%d-%m-%Y %H:%M:%S")}
-    )
+        from_attributes=True,)
 
 class EmployeeChatSchema(EmployeeReadSchema):
     messages: Page[MessageReadSchema]
 
     model_config = ConfigDict(
-        from_attributes=True
-    )
+        from_attributes=True)
+
+class EmployeeChatListSchema(BaseModel):
+    id: int
+    name: str | None
+    is_banned: bool
+    unread_count: int
+    last_message_at: datetime | None
+
+    model_config = ConfigDict(
+        from_attributes=True)

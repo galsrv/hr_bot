@@ -8,17 +8,21 @@ from aiogram.types import (
 )
 
 from config import BotSettings, BotDir, BotCallback
-from core.service import _get_menu_item, _get_menu_page
+from core.service import ApiClientException, api_client
 
 menu_router = Router(name=__name__)
 
-async def _menu_inline_keyboard_builder(bs: BotSettings, page: int = 1) -> list:
+async def _menu_inline_keyboard_builder(message: Message, bs: BotSettings, page: int = 1) -> list:
     '''Собираем элементы экранной клавиатуры.'''
     if page is None:
         page = 1
 
-    # Не забыть обработку исключения ApiClientConnection
-    menu_page: dict = _get_menu_page(page, page_size=bs.MENU_BUTTONS_PER_PAGE)
+    try:
+        menu_page: dict = await api_client.get_menu_page(page=page, size=bs.MENU_BUTTONS_PER_PAGE)
+    except ApiClientException:
+        await message.answer(bs.ERROR_CONNECTION_TO_BACKEND_API)
+        return
+
     inline_keyboard = []
 
     for i in range(len(menu_page['items'])):
@@ -48,15 +52,21 @@ async def _menu_inline_keyboard_builder(bs: BotSettings, page: int = 1) -> list:
 @menu_router.message(Command('menu'))
 async def command_menu_handler(message: Message, bs: BotSettings, page: int = 1) -> None:
     '''Обработчик команды /menu.'''
-    inline_keyboard = await _menu_inline_keyboard_builder(bs, page)
-    await message.answer(
-        text=bs.INVITATION_TO_EXPLORE_THE_MENU,
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_keyboard))
+    inline_keyboard = await _menu_inline_keyboard_builder(message, bs, page)
+    if inline_keyboard:
+        await message.answer(
+            text=bs.INVITATION_TO_EXPLORE_THE_MENU,
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_keyboard))
 
-async def _print_menu_item(message: Message, id: int):
-    item = _get_menu_item(id)
-    if item:
-        await message.answer(item['answer'])
+async def _print_menu_item(message: Message, id: int, bs: BotSettings):
+    try:
+        item: dict = await api_client.get_menu_item(id)
+        if item:
+            await message.answer(item['answer'])
+    except ApiClientException:
+        await message.answer(bs.ERROR_CONNECTION_TO_BACKEND_API)
+        return
+    
 
 @menu_router.callback_query(BotCallback.filter(F.action == BotDir.menu))
 async def handle_menu_callbacks(callback: CallbackQuery, callback_data: BotCallback, bs: BotSettings):
@@ -66,7 +76,7 @@ async def handle_menu_callbacks(callback: CallbackQuery, callback_data: BotCallb
 
     # Выводим либо другую страницу справочника, либ ответ на выбранный раздел
     if callback_data.item_id is not None:
-        await _print_menu_item(callback.message, callback_data.item_id)
+        await _print_menu_item(callback.message, callback_data.item_id, bs)
     else:
         await command_menu_handler(callback.message, bs, callback_data.page)
 

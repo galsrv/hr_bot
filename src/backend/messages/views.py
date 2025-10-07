@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, BackgroundTasks
 from fastapi_pagination import Params
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_async_session
 from messages.models import MessagesOrm, EmployeesOrm
 from messages.schemas import (
+    EmployeeChatListSchema,
     MessageCreateSchema,
     MessageReadSchema,
     EmployeeChangeSchema,
@@ -13,6 +14,7 @@ from messages.schemas import (
     EmployeeChatSchema,
 )
 from messages.service import messages_service, employee_service
+from messages.utils import send_telegram_message
 
 messages_router = APIRouter()
 
@@ -44,6 +46,18 @@ async def get_employee(
     employee: EmployeesOrm | None = await employee_service.get_employee(session, id)
     return employee
 
+@messages_router.get(
+    '/employees/',
+    response_model=list[EmployeeChatListSchema],
+    summary='Получить список сотрудников (чатов)'
+)
+async def get_employees(
+    session: AsyncSession = Depends(get_async_session)
+) -> list[EmployeeChatListSchema]:
+    '''Получаем чаты с сотрудниками.'''
+    employees = await employee_service.get_employees_chat_list(session)
+    return employees
+
 @messages_router.patch(
     '/employees/{id}',
     response_model=EmployeeReadSchema,
@@ -66,10 +80,12 @@ async def change_employee(
 )
 async def create_message(
     new_message: MessageCreateSchema,
+    backgorund_task: BackgroundTasks,
     session: AsyncSession = Depends(get_async_session)
 ) -> MessageReadSchema:
     '''Создаем новое сообщение пользователя или менеджера.'''
     new_message: MessagesOrm = await messages_service.create_message(session, new_message)
+    backgorund_task.add_task(send_telegram_message, new_message.employee_id, new_message.text)
     return new_message
 
 @messages_router.get(

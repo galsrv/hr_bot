@@ -25,3 +25,7 @@ class BotSettingsOrm(AppBaseClass):
         String(SETTING_DESCRIPTION_MAX_LEN),
         nullable=True,
         server_default=text("''"))
+
+    def to_dict(self) -> dict:
+        '''Используется для выгрузки в csv'''
+        return {'name': self.name, 'value': self.value, 'int_type': self.int_type, 'description': self.description}

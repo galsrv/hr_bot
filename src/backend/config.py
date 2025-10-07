@@ -23,4 +23,8 @@ class Settings(BaseSettings):
     TELEGRAM_API_URL: str = os.getenv('TELEGRAM_API_URL', '')
     TELEGRAM_BOT_TOKEN: str = os.getenv('TELEGRAM_BOT_TOKEN', '')
 
+    FIXTURES_MENU_PATH: str = 'fixtures/menu.csv'
+    FIXTURES_SETTINGS_PATH: str = 'fixtures/settings.csv'
+    FIXTURES_MANUAL: str = '❌ Использование: python fixtures/fixtures.py --menu | --settings --download | --upload'
+
 settings = Settings()

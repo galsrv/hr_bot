@@ -57,7 +57,7 @@ Features implemented
 * Alembic migrations
 * Pydantic models, whenever possible
 * Dependencies
-* Lifespan tasks
+* Background tasks & Lifespan tasks
 * Pagination
 * Separate frontend application based on Nicegui
 * Frontend communicating with backend by REST API

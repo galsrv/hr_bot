@@ -20,5 +20,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = os.getenv('NICEGUI_SECRET_KEY', 'default_secret_key')
     USERS_PER_PAGE: int = 3
 
+    DATETIME_FORMAT: str = '%d.%m.%Y %H:%M:%S'
+
 
 settings = Settings()

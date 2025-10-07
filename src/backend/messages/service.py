@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import paginate
 from loguru import logger
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from base_service import BaseService
@@ -17,9 +17,11 @@ from messages.schemas import (
     EmployeeChangeSchema,
     EmployeeChatSchema,
     MessageCreateSchema,
+    EmployeeChatListSchema,
 )
 from users.models import UsersOrm
 from users.service import user_service
+
 
 class EmployeeService(BaseService):
     def __init__(self):
@@ -57,6 +59,40 @@ class EmployeeService(BaseService):
                 detail=ERROR_MESSAGE_EMPLOYEE_NOT_EXIST)
 
         return employee
+
+    async def get_employees_chat_list(
+            self,
+            session: AsyncSession,
+    ) -> list[EmployeeChatListSchema]:
+        '''Получаем список чатов кастомным запросом.'''
+
+        # Подзапрос с количеством непрочитанных сообщений и датой последнего
+        message_stats = (
+            select(
+                MessagesOrm.employee_id,
+                func.count().filter(MessagesOrm.is_read == False).label('unread_count'),  # noqa: E712
+                func.max(MessagesOrm.created_at).label('last_message_at')
+            )
+            .group_by(MessagesOrm.employee_id)
+            .subquery()
+        )
+
+        # Основной запрос с данными сотрудников и данными подзапроса
+        stmt = (
+            select(
+                EmployeesOrm.id, EmployeesOrm.name, EmployeesOrm.is_banned,
+                func.coalesce(message_stats.c.unread_count, 0).label('unread_count'),
+                message_stats.c.last_message_at
+            )
+            .outerjoin(message_stats, EmployeesOrm.id == message_stats.c.employee_id)
+            .order_by(message_stats.c.last_message_at.desc().nullslast())
+        )
+
+        employees = await session.execute(stmt)
+        employees = employees.all()
+        employees = [EmployeeChatListSchema.model_validate(e) for e in employees]
+
+        return employees
 
     async def ban_unban_employee(
             self,
@@ -112,6 +148,7 @@ class MessagesService(BaseService):
             data_input.is_read = True
 
         new_message: MessagesOrm = await self.create(session, data_input)
+
         return new_message
 
     async def mark_chat_as_read(
@@ -131,9 +168,10 @@ class MessagesService(BaseService):
             id: int,
             page_params: Params,
     ) -> EmployeeChatSchema:
+        '''Получаем чат с сотрудником.'''
         employee: EmployeesOrm | None = await employee_service.get_employee(session, id)
 
-        query = select(MessagesOrm).where(MessagesOrm.employee_id == employee.id)
+        query = select(MessagesOrm).where(MessagesOrm.employee_id == employee.id).order_by(MessagesOrm.created_at.asc())
         messages: Page = await paginate(session, query, page_params)
 
         # Собираем структуру с вложенной пагинацией

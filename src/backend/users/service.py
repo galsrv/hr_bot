@@ -33,8 +33,8 @@ class UserService(BaseService):
         is_active: bool | None = None,
         name: str | None = None,
         page_params: Params = None,
-     ):
-        """Читаем записи таблицы, применяя фильтры."""
+     ) -> Page:
+        '''Читаем записи таблицы, применяя фильтры.'''
         filters = list()
 
         if role is not None:

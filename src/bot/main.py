@@ -30,6 +30,7 @@ async def main():
     else:
         # В деве/тесте работаем с пуллингом
         logger.info('⚙️  Running in DEVELOPMENT mode (Polling enabled)')
+        await bot.delete_webhook(drop_pending_updates=True)
         await dispatcher.start_polling(
             bot,
             allowed_updates=s.ALLOWED_UPDATES,)

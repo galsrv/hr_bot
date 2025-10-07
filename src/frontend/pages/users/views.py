@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from functools import partial
 from typing import Callable
 
@@ -6,6 +7,7 @@ from fastapi import Depends
 from nicegui import APIRouter, ui
 from pydantic import ValidationError
 
+from config import settings as s
 from pages.layout import navbar
 from pages.users.constants import(
     USER_NAME_MAX_LENGTH,
@@ -119,6 +121,9 @@ async def _edit_user_form_handler(
             password_toggle_button=True,
             validation=lambda value: _validate_password(value)
         ).bind_value_to(user_data, 'password')
+
+    # Работаем с датой в виде строке, конвертирую по-простому. Тут стоило заранее сделать модель Pydantic 
+    user_data['created_at'], user_data['updated_at'] = [datetime.strptime(el, '%Y-%m-%dT%H:%M:%S.%f').strftime(s.DATETIME_FORMAT) for el in (user_data['created_at'], user_data['updated_at'])]
 
     ui.label(f'Запись создана: {user_data['created_at']} пользователем {user_data['created_by']['username']}, изменена {user_data['updated_at']} пользователем {user_data['updated_by']['username']}').classes('text-subtitle2')
 

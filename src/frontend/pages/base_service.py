@@ -12,14 +12,14 @@ class BaseApiClient():
 
         response_dict = await response.json()
 
-        if response.status not in (status.HTTP_200_OK, status.HTTP_201_CREATED):
+        if response.status not in (status.HTTP_200_OK, status.HTTP_201_CREATED, status.HTTP_204_NO_CONTENT):
             # Парсим текст ошибки от API-сервера, ответ может приходить в разной структуре
             try:
                 error_message = response_dict['detail']
                 if type(error_message) is list:
                     error_message = error_message[0]['msg']
             except (KeyError, IndexError, TypeError):
-                error_message = 'Произошла ошибка при сохранении данных'
+                error_message = 'Произошла ошибка при обработке данных'
             return {'OK': False, 'message': error_message}
 
         return {'OK': True, 'message': 'Значение сохранено!'}
@@ -53,7 +53,7 @@ class BaseApiClient():
                 logger.log('API_REQUEST', f'Method: PATCH, URL: {url_shortener(url)}, status: {response.status}')   
                 return await self._response_parser(response)
 
-    async def delete(self, url) -> dict | list[dict] | None:
+    async def delete(self, url) -> None:
         '''Удалить данне на бэкенде бэкенда.'''
         async with ClientSession() as session:
             async with session.delete(url) as response:

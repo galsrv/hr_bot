@@ -1,9 +1,23 @@
+from fastapi import Depends
 from nicegui import APIRouter, ui
+
+from pages.dependencies import get_current_user
+from pages.urls import (
+    LOGIN_PAGE_URL,
+    MESSAGES_PAGE_URL,
+)
+from pages.users.schemas import UserReadSchema
 
 
 root_router = APIRouter()
 
 @root_router.page('/', title='Корневая страница сайта')
 @root_router.page('/admin', title='Корневая страница админки')
-async def site_root_page():
-    ui.label('Панель администратора Телеграмм-бота').props('header').classes('text-bold text-h2')
+async def site_root_page(
+    current_user: UserReadSchema = Depends(get_current_user),
+):
+    if not current_user:
+        ui.navigate.to(LOGIN_PAGE_URL)
+
+    ui.navigate.to(MESSAGES_PAGE_URL)
+

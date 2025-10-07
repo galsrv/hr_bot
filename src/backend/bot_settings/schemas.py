@@ -23,3 +23,10 @@ class SettingsChangeSchema(BaseModel):
     model_config = ConfigDict(
         extra='ignore',
         )
+
+class SettingCreateSchema(BaseModel):
+    '''Класс создания записи таблицы Settings.'''
+    name: str
+    value: str
+    description: str
+    int_type: bool

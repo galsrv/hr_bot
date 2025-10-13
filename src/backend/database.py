@@ -1,12 +1,13 @@
-from sqlalchemy import Integer
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.orm import declarative_base, declared_attr, mapped_column, Mapped
-
 from config import settings
-from log import sql_logger # noqa
+from log import sql_logger  # noqa
+from sqlalchemy import Integer
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import Mapped, declarative_base, declared_attr, mapped_column
+
 
 class PreBase:
-    '''Базовый класс для всех моделей ORM.'''
+    """Базовый класс для всех моделей ORM."""
+
     __abstract__ = True
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -17,13 +18,14 @@ class PreBase:
 
     @declared_attr
     def __order_by__(cls):
-        return (cls.id.asc(), )
+        return (cls.id.asc(),)
+
 
 AppBaseClass = declarative_base(cls=PreBase)
 
 engine = create_async_engine(
-    url=settings.DATABASE_URL,
-    echo=False if settings.PROD_ENVIRONMENT else True)
+    url=settings.DATABASE_URL, echo=False if settings.PROD_ENVIRONMENT else True
+)
 
 AsyncSessionLocal = async_sessionmaker(bind=engine, class_=AsyncSession)
 

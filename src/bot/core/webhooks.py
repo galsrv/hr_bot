@@ -1,13 +1,14 @@
 import asyncio
-from aiohttp import web
+
 from aiogram import Bot, Dispatcher
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from core.log import logger
+from aiohttp import web
 from config import settings as s
+from core.log import logger
 
 
 async def setup_webhook(bot: Bot, dispatcher: Dispatcher) -> None:
-    '''Настраивает вебхуки и запускаем aiohttp-сервер. Используется только в проде.'''
+    """Настраивает вебхуки и запускаем aiohttp-сервер. Используется только в проде."""
     webhook_url = f'{s.BASE_WEBHOOK_URL}{s.WEBHOOK_PATH}'
     logger.info(f'🌍 Setting webhook to {webhook_url}')
 
@@ -22,7 +23,9 @@ async def setup_webhook(bot: Bot, dispatcher: Dispatcher) -> None:
     app['bot'] = bot
 
     # Регистрируем хэндлер вебхуков и настраиваем диспетчер
-    SimpleRequestHandler(dispatcher=dispatcher, bot=bot).register(app, path=s.WEBHOOK_PATH)
+    SimpleRequestHandler(dispatcher=dispatcher, bot=bot).register(
+        app, path=s.WEBHOOK_PATH
+    )
     setup_application(app, dispatcher, bot=bot)
 
     # Запускаем сервер

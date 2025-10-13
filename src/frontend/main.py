@@ -1,8 +1,7 @@
-from nicegui import app as nicegui_app, ui
-
 from config import settings
+from nicegui import app as nicegui_app
+from nicegui import ui
 from routers import main_router
-
 
 nicegui_app.include_router(main_router)
 

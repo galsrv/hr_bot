@@ -1,8 +1,8 @@
 import asyncio
+
 from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-
 from config import settings as s
 from core.dispatcher import dispatcher
 from core.log import logger
@@ -11,10 +11,9 @@ from core.startup import register_startup
 from core.webhooks import setup_webhook
 
 
-async def main():
-    bot = Bot(
-        token=s.TOKEN,
-        default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+async def main() -> None:
+    """Фукнкция запуска бота в работу."""
+    bot = Bot(token=s.TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     await bot.set_my_commands(s.COMMANDS)
 
     # Регистрируем middleware
@@ -33,7 +32,9 @@ async def main():
         await bot.delete_webhook(drop_pending_updates=True)
         await dispatcher.start_polling(
             bot,
-            allowed_updates=s.ALLOWED_UPDATES,)
+            allowed_updates=s.ALLOWED_UPDATES,
+        )
+
 
 if __name__ == '__main__':
     asyncio.run(main())

@@ -8,7 +8,7 @@ load_dotenv(dotenv_path)
 
 
 class Settings(BaseSettings):
-    '''Класс настроек приложения.'''
+    """Класс настроек приложения."""
 
     PROD_ENVIRONMENT: bool = os.getenv('PROD', 'False').lower() in ('true', '1')
     APP_TITLE: str = 'HR Bot'
@@ -16,15 +16,17 @@ class Settings(BaseSettings):
     PORT: int = 8000
     DATABASE_URL: str = (
         f'postgresql+asyncpg://'
-        f'{os.getenv('POSTGRES_USER')}:'
-        f'{os.getenv('POSTGRES_PASSWORD')}@'
-        f'{os.getenv('POSTGRES_DB_HOST')}:{os.getenv('POSTGRES_DB_PORT')}/'
-        f'{os.getenv('POSTGRES_DB')}')
+        f'{os.getenv("POSTGRES_USER")}:'
+        f'{os.getenv("POSTGRES_PASSWORD")}@'
+        f'{os.getenv("POSTGRES_DB_HOST")}:{os.getenv("POSTGRES_DB_PORT")}/'
+        f'{os.getenv("POSTGRES_DB")}'
+    )
     TELEGRAM_API_URL: str = os.getenv('TELEGRAM_API_URL', '')
     TELEGRAM_BOT_TOKEN: str = os.getenv('TELEGRAM_BOT_TOKEN', '')
 
     FIXTURES_MENU_PATH: str = 'fixtures/menu.csv'
     FIXTURES_SETTINGS_PATH: str = 'fixtures/settings.csv'
     FIXTURES_MANUAL: str = '❌ Использование: python fixtures/fixtures.py --menu | --settings --download | --upload'
+
 
 settings = Settings()

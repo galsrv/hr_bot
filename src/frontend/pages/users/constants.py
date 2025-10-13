@@ -10,4 +10,3 @@ USERNAME_REGEXP = r'^[A-Za-z]+$'
 
 # ERROR_MESSAGE_ENTRY_NOT_EXIST = 'Указанная запись не найдена'
 # ERROR_MESSAGE_INACTIVE_USER = 'Пользователь заблокирован'
-

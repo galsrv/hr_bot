@@ -1,5 +1,4 @@
 from nicegui import APIRouter
-
 from pages.auth.views import auth_router
 from pages.menu.views import menu_router
 from pages.messages.views import messages_router

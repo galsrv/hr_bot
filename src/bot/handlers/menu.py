@@ -1,27 +1,27 @@
 from aiogram import F, Router
 from aiogram.filters import Command
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 from aiogram.types.callback_query import CallbackQuery
-from aiogram.types import (
-    Message,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton
-)
-
-from config import BotSettings, BotDir, BotCallback
+from config import BotCallback, BotDir, BotSettings
 from core.service import ApiClientException, api_client
 
 menu_router = Router(name=__name__)
 
-async def _menu_inline_keyboard_builder(message: Message, bs: BotSettings, page: int = 1) -> list:
-    '''Собираем элементы экранной клавиатуры.'''
+
+async def _menu_inline_keyboard_builder(
+    message: Message, bs: BotSettings, page: int = 1
+) -> list:
+    """Собираем элементы экранной клавиатуры."""
     if page is None:
         page = 1
 
     try:
-        menu_page: dict = await api_client.get_menu_page(page=page, size=bs.MENU_BUTTONS_PER_PAGE)
+        menu_page: dict = await api_client.get_menu_page(
+            page=page, size=bs.MENU_BUTTONS_PER_PAGE
+        )
     except ApiClientException:
         await message.answer(bs.ERROR_CONNECTION_TO_BACKEND_API)
-        return
+        return None
 
     inline_keyboard = []
 
@@ -35,42 +35,69 @@ async def _menu_inline_keyboard_builder(message: Message, bs: BotSettings, page:
             InlineKeyboardButton(
                 text=menu_item['button_text'],
                 callback_data=BotCallback(
-                    action=BotDir.menu, item_id=menu_item['id']).pack()))
+                    action=BotDir.menu, item_id=menu_item['id']
+                ).pack(),
+            )
+        )
 
     # Если страниц больше одной
     if menu_page['pages'] > 1:
         inline_keyboard.append([])
-        # Если текущая страница - не первая 
+        # Если текущая страница - не первая
         if menu_page['page'] > 1:
-            inline_keyboard[-1].append(InlineKeyboardButton(text='⬅️', callback_data=BotCallback(action=BotDir.menu, page=menu_page['page'] - 1).pack()))
+            inline_keyboard[-1].append(
+                InlineKeyboardButton(
+                    text='⬅️',
+                    callback_data=BotCallback(
+                        action=BotDir.menu, page=menu_page['page'] - 1
+                    ).pack(),
+                )
+            )
         # Если текущая страница - не последняя
         if menu_page['page'] < menu_page['pages']:
-            inline_keyboard[-1].append(InlineKeyboardButton(text='➡️', callback_data=BotCallback(action=BotDir.menu, page=menu_page['page'] + 1).pack()))
+            inline_keyboard[-1].append(
+                InlineKeyboardButton(
+                    text='➡️',
+                    callback_data=BotCallback(
+                        action=BotDir.menu, page=menu_page['page'] + 1
+                    ).pack(),
+                )
+            )
 
     return inline_keyboard
 
+
 @menu_router.message(Command('menu'))
-async def command_menu_handler(message: Message, bs: BotSettings, page: int = 1) -> None:
-    '''Обработчик команды /menu.'''
+async def command_menu_handler(
+    message: Message, bs: BotSettings, page: int = 1
+) -> None:
+    """Обработчик команды /menu."""
     inline_keyboard = await _menu_inline_keyboard_builder(message, bs, page)
     if inline_keyboard:
         await message.answer(
             text=bs.INVITATION_TO_EXPLORE_THE_MENU,
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_keyboard))
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_keyboard),
+        )
 
-async def _print_menu_item(message: Message, id: int, bs: BotSettings):
+
+async def _print_menu_item(
+    message: Message, menu_item_id: int, bs: BotSettings
+) -> None:
+    """Выдаем ответ на выбранный пользователем элемент справочника."""
     try:
-        item: dict = await api_client.get_menu_item(id)
+        item: dict = await api_client.get_menu_item(menu_item_id)
         if item:
             await message.answer(item['answer'])
     except ApiClientException:
         await message.answer(bs.ERROR_CONNECTION_TO_BACKEND_API)
         return
-    
+
 
 @menu_router.callback_query(BotCallback.filter(F.action == BotDir.menu))
-async def handle_menu_callbacks(callback: CallbackQuery, callback_data: BotCallback, bs: BotSettings):
-    '''Обработчик обратных вызовов опций меню.'''
+async def handle_menu_callbacks(
+    callback: CallbackQuery, callback_data: BotCallback, bs: BotSettings
+) -> None:
+    """Обработчик обратных вызовов опций меню."""
     await callback.message.edit_reply_markup(reply_markup=None)
     await callback.message.edit_text('Ответ получен 👍')
 

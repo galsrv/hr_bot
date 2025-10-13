@@ -1,12 +1,16 @@
 import asyncio
+
 from aiogram import Bot, Dispatcher
+from config import BotSettings
+from config import settings as s
+from core.service import ApiClientException, api_client
 
-from config import BotSettings, settings as s
-from core.service import api_client, ApiClientException
 
-async def on_startup(bot: Bot, dispatcher: Dispatcher):
-    '''Загрузка настроек при старте бота и далее обновление по таймеру'''
-    async def refresh_settings():
+async def on_startup(bot: Bot, dispatcher: Dispatcher) -> None:
+    """Загрузка настроек при старте бота и далее обновление по таймеру."""
+
+    async def refresh_settings() -> None:
+        """Обновления настройки в цикле."""
         while True:
             try:
                 bot_settings: dict = await api_client.get_settings()
@@ -18,5 +22,7 @@ async def on_startup(bot: Bot, dispatcher: Dispatcher):
 
     asyncio.create_task(refresh_settings())
 
-def register_startup(dp: Dispatcher):
+
+def register_startup(dp: Dispatcher) -> None:
+    """Регистрируем функцию для запуска на старте работы бота."""
     dp.startup.register(on_startup)

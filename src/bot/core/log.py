@@ -1,9 +1,11 @@
-from enum import Enum
 import sys
+from enum import Enum
 
 from loguru import logger
 
+
 class AnsiColor(str, Enum):
+    """Основные цвета."""
     RESET = '\033[0m'
     BLACK = '\033[30m'
     RED = '\033[31m'
@@ -23,17 +25,14 @@ class AnsiColor(str, Enum):
     BRIGHT_CYAN = '\033[96m'
     BRIGHT_WHITE = '\033[97m'
 
+
 # Конфигурируем логгер Loguru
 logger.remove()
 
 logger.add(
     sys.stderr,
     level='DEBUG',
-    format='<green>{time:YYYY-MM-DD HH:mm:ss}</> | <yellow>{level}</> | <cyan>{name}:{function}</> | {message}'
+    format='<green>{time:YYYY-MM-DD HH:mm:ss}</> | <yellow>{level}</> | <cyan>{name}:{function}</> | {message}',
 )
 
-logger.level(
-    'API_REQUEST',
-    no=15,
-    color='<yellow>')
-
+logger.level('API_REQUEST', no=15, color='<yellow>')

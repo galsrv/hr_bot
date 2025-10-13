@@ -1,52 +1,62 @@
-indent-width = 4
-line-length = 79
-required-version = ">=0.11.11"
+[tool.ruff]
+# Core settings
 target-version = "py311"
-# Enable preview features.
+line-length = 90
+indent-width = 4
 preview = true
-# Содержимое папки alembic-а в проверку не включаем
-exclude = ["src/alembic"]
+exclude = ["src/alembic", "venv", "__pycache__", "migrations"]
 
-[format]
-# Enable reformatting of code snippets in docstrings.
-docstring-code-format = true
-# Format all docstring code snippets with a line length of 60.
-docstring-code-line-length = 60
-# Use `\n` line endings for all files
-line-ending = "lf"
-# Prefer single quotes over double quotes.
-quote-style = "single"
+# You can enable auto-fixing only certain rules if you want:
+# fix = true
+# fix-only = ["I", "F401"]
 
-[lint]
-ignore=["E265", "F811", "D100", "D105", "D104", "D203", "D211", "D213", "N818", "W505", "ANN401"]
-select=["E3", "E5", "E4", "E7", "E9", "W", "C90", "I", "N", "D", "F", "ANN", "ASYNC", "A", "COM", "RET", ]
+[tool.ruff.lint]
+# Choose which rule families to check
+select = [
+    "E", "F", "W", "I", "N", "D", "D400", "C90", "A", "ANN",
+    "ASYNC", "COM", "RET"
+]
+# Ignore selected rules
+ignore = [
+    "E265", "F811", "D100", "D104", "D105",
+    "D203", "D211", "D213", "N818", "ANN401", "W505", "COM812",
+    "ANN002",  # ignore missing *args annotation
+    "ANN003",  # ignore missing **kwargs annotation
+    "RET504",  # unnecessary variable assignment before return
+    "D107",    # Missing docstring in `__init__`
+]
 
-[lint.extend-per-file-ignores]
-# Also ignore in all files.
-"__init__.py" = ["E402", "E401"]
-
-[lint.flake8-annotations]
-allow-star-arg-any = true
-
-[lint.flake8-quotes]
-inline-quotes = "single"
-
-[lint.isort]
-case-sensitive = true
-known-local-folder = ["src"]
-
-[lint.mccabe]
-# Flag errors (`C901`) whenever the complexity level exceeds 5.
+# Optional: limit complexity
+[tool.ruff.lint.mccabe]
 max-complexity = 10
 
-[lint.pycodestyle]
-max-doc-length = 79
-# E501 reports lines that exceed the length of 79.
-max-line-length = 79
+# Allow star-args without explicit type annotation
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = true
+
+# Prefer single quotes
+[tool.ruff.format]
+quote-style = "single"
+line-ending = "lf"
+docstring-code-format = true
+docstring-code-line-length = 60
+
+# Sorting imports
+[tool.ruff.lint.isort]
+known-local-folder = ["src"]
+case-sensitive = true
+
+# Per-file ignores
+[tool.ruff.lint.extend-per-file-ignores]
+"__init__.py" = ["E401", "E402"]
+
+# Optional: documentation style
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.pyright]
+typeCheckingMode = "off"
 reportAttributeAccessIssue = false
 reportReturnType = false
 reportArgumentType = false
 reportOptionalMemberAccess = false
-typeCheckingMode = "off"

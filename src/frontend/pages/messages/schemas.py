@@ -1,36 +1,41 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, computed_field
 
 from config import settings as s
 from pages.users.schemas import UserRelationshipSchema
+from pydantic import BaseModel, ConfigDict, computed_field
+
 
 class CustomDateFormat:
-    '''Своего рода Миксин для переиспользования.'''
+    """Своего рода Миксин для переиспользования."""
 
     @computed_field
     def created_at_str(self) -> str | None:
-        '''Кастомный формат даты'''
+        """Кастомный формат даты."""
         if hasattr(self, 'created_at'):
             return self.created_at.strftime(s.DATETIME_FORMAT)
+        return None
 
     @computed_field
     def updated_at_str(self) -> str | None:
-        '''Кастомный формат даты'''
+        """Кастомный формат даты."""
         if hasattr(self, 'updated_at'):
             return self.updated_at.strftime(s.DATETIME_FORMAT)
+        return None
+
 
 class EmployeeChatListSchema(BaseModel):
+    """Модель представления списка чатов."""
     id: int
     name: str | None
     is_banned: bool
     unread_count: int
     last_message_at: datetime | None
 
-    model_config = ConfigDict(
-        from_attributes=True
-    )
+    model_config = ConfigDict(from_attributes=True)
+
 
 class EmployeeReadSchema(BaseModel, CustomDateFormat):
+    """Модель представления сотрудника."""
     id: int
     name: str | None
     is_banned: bool
@@ -39,9 +44,12 @@ class EmployeeReadSchema(BaseModel, CustomDateFormat):
     updated_by_id: int | None
 
     model_config = ConfigDict(
-        from_attributes=True,)
+        from_attributes=True,
+    )
+
 
 class MessageReadSchema(BaseModel, CustomDateFormat):
+    """Модель представления сообщения."""
     id: int
     employee_id: int
     text: str
@@ -50,10 +58,13 @@ class MessageReadSchema(BaseModel, CustomDateFormat):
     is_read: bool
 
     model_config = ConfigDict(
-        from_attributes=True,)
+        from_attributes=True,
+    )
+
 
 class Page(BaseModel):
-    '''Вручную собранная модель fastapi-pagination'''
+    """Вручную собранная модель fastapi-pagination."""
+
     items: list[MessageReadSchema]
     total: int
     page: int
@@ -61,7 +72,10 @@ class Page(BaseModel):
     pages: int
 
     model_config = ConfigDict(
-        from_attributes=True,)
+        from_attributes=True,
+    )
+
 
 class EmployeeChatSchema(EmployeeReadSchema):
+    """Модель чата со страницей с сообщениями."""
     messages: Page

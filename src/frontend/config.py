@@ -8,7 +8,7 @@ load_dotenv(dotenv_path)
 
 
 class Settings(BaseSettings):
-    '''Класс настроек приложения.'''
+    """Класс настроек приложения."""
 
     PROD_ENVIRONMENT: bool = os.getenv('PROD', 'False').lower() in ('true', '1')
     APP_TITLE: str = 'HR Bot Admin Panel'

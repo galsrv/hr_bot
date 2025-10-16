@@ -4,6 +4,7 @@ from typing import Callable
 
 from fastapi import Depends
 from nicegui import APIRouter, ui
+
 from pages.dependencies import get_current_user, get_edit_settings_permission
 from pages.layout import navbar
 from pages.settings.constants import (
@@ -11,6 +12,7 @@ from pages.settings.constants import (
     SETTING_VALUE_MAX_LEN,
 )
 from pages.settings.service import settings_api_client
+import pages.styles as st
 from pages.urls import LOGIN_PAGE_URL, SETTINGS_PAGE_URL
 from pages.users.schemas import UserReadSchema
 
@@ -33,19 +35,19 @@ def _validate_setting_value(value: str, int_type: bool) -> str | None:
 
 def _setting_details(setting_data: dict) -> list:
     """Вывод полей формы изменения настройки."""
-    ui.label(setting_data['name']).classes('text-h6')
-    ui.label(setting_data['description']).classes('text-subtitle2')
+    ui.label(setting_data['name']).classes(st.LABEL_BOLD)
+    ui.label(setting_data['description']).classes(st.LABEL_BOLD)
 
     value_input = (
         ui.input(
-            label='Значение настройки',
             value=setting_data['value'],
             placeholder='Введите значение настройки',
             validation=lambda value: _validate_setting_value(
                 value, setting_data['int_type']
             ),
         )
-        .classes('w-full')
+        .props(st.INPUT_PROPS)
+        .classes(st.INPUT)
         .bind_value_to(setting_data, 'value')
     )
     # Возвращаем объекты полей, которые необходимо проверить перед сохранением записи
@@ -95,38 +97,34 @@ async def settings_list_page(
     navbar(current_user)
 
     settings_list = await settings_api_client.get_settings()
-    ui.item_label('Настройки').props('header').classes('text-bold text-h4')
+    ui.item_label('Настройки').classes(st.PAGE_HEADER)
 
     if permission:
         with ui.card().classes('w-full'):
             with ui.row():
                 ui.button(
                     'ВЫГРУЗИТЬ В ФАЙЛ',
-                    on_click=lambda x=settings_api_client.download_settings: _download_upload_settings_button_handler(
-                        x
-                    ),
-                )
+                    on_click=lambda x=settings_api_client.download_settings: _download_upload_settings_button_handler(x),
+                ).props(st.BUTTON_PROPS).classes(st.BUTTON)
                 ui.button(
                     'ЗАГРУЗИТЬ ИЗ ФАЙЛА',
-                    on_click=lambda x=settings_api_client.upload_settings: _download_upload_settings_button_handler(
-                        x
-                    ),
-                )
+                    on_click=lambda x=settings_api_client.upload_settings: _download_upload_settings_button_handler(x),
+                ).props(st.BUTTON_PROPS).classes(st.BUTTON)
 
     if settings_list:
         for setting in settings_list:
             with ui.card().classes('w-full'):
-                ui.label(setting['name']).classes('text-h6')
-                ui.label(setting['description']).classes('text-subtitle2')
-                ui.label(setting['value']).classes('')
+                ui.label(setting['name']).classes(st.LABEL_BOLD)
+                ui.label(setting['description']).classes(st.LABEL_BOLD)
+                ui.label(setting['value']).classes(st.LABEL)
                 if permission:
                     ui.button(
                         'ИЗМЕНИТЬ',
                         on_click=lambda s_id=setting['id']: ui.navigate.to(f'{s_id}'),
-                    )
+                    ).props(st.BUTTON_PROPS).classes(st.BUTTON)
 
 
-@settings_router.page('/{id}', title='Изменение настройки')
+@settings_router.page('/{setting_id}', title='Изменение настройки')
 async def setting_page(
     setting_id: int,
     current_user: UserReadSchema = Depends(get_current_user),
@@ -148,19 +146,13 @@ async def setting_page(
         ui.notify('Запрошенная настройка не найдена', type='negative')
         ui.button('НАЗАД', on_click=ui.navigate.back)
     else:
-        ui.item_label('Изменение настройки').props('header').classes(
-            'text-bold text-h4'
-        )
+        ui.item_label('Изменение настройки').classes(st.PAGE_HEADER)
         with ui.card().classes('w-full'):
             # Выводим поля пользователя
             fields_to_validate = _setting_details(setting_data)
             with ui.row():
                 ui.button(
                     'СОХРАНИТЬ',
-                    on_click=partial(
-                        lambda: _save_setting_button_handler(
-                            setting_data, fields_to_validate
-                        )
-                    ),
-                )
-                ui.button('НАЗАД', on_click=ui.navigate.back)
+                    on_click=partial(lambda: _save_setting_button_handler(setting_data, fields_to_validate)),
+                ).props(st.BUTTON_PROPS).classes(st.BUTTON)
+                ui.button('НАЗАД', on_click=ui.navigate.back).props(st.BUTTON_PROPS).classes(st.BUTTON)

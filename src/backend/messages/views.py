@@ -1,6 +1,8 @@
-from database import get_async_session
 from fastapi import APIRouter, BackgroundTasks, Depends, status
 from fastapi_pagination import Params
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from database import get_async_session
 from messages.models import EmployeesOrm, MessagesOrm
 from messages.schemas import (
     EmployeeChangeSchema,
@@ -13,7 +15,6 @@ from messages.schemas import (
 )
 from messages.service import employee_service, messages_service
 from messages.utils import send_telegram_message
-from sqlalchemy.ext.asyncio import AsyncSession
 
 messages_router = APIRouter()
 
@@ -33,7 +34,7 @@ async def create_or_get_employee(
 
 
 @messages_router.get(
-    '/employees/{id}',
+    '/employees/{employee_id}',
     response_model=EmployeeReadSchema,
     summary='Получить данные сотрудника',
 )
@@ -59,7 +60,7 @@ async def get_employees(
 
 
 @messages_router.patch(
-    '/employees/{id}',
+    '/employees/{employee_id}',
     response_model=EmployeeReadSchema,
     summary='Заблокировать/разблокировать сотрудника',
 )
@@ -95,7 +96,7 @@ async def create_message(
 
 
 @messages_router.get(
-    '/employees/{id}/chat',
+    '/employees/{employee_id}/chat',
     response_model=EmployeeChatSchema,
     summary='Получить чат с сотрудником',
 )
@@ -110,7 +111,7 @@ async def get_employee_chat(
 
 
 @messages_router.post(
-    '/employees/{id}/chat/mark_as_read',
+    '/employees/{employee_id}/chat/mark_as_read',
     status_code=status.HTTP_204_NO_CONTENT,
     summary='Отметить чат прочитанным',
 )

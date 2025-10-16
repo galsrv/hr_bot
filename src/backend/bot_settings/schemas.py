@@ -1,5 +1,6 @@
-from bot_settings.constants import SETTING_VALUE_MAX_LEN
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+from bot_settings.constants import SETTING_VALUE_MAX_LEN
 
 
 class SettingsReadSchema(BaseModel):

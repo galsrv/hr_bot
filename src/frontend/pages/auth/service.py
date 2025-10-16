@@ -1,6 +1,7 @@
 from aiohttp import ClientResponse, ClientSession
-from config import settings
 from fastapi import status
+
+from config import settings
 from pages.base_service import BaseApiClient
 from pages.users.schemas import UserReadSchema
 

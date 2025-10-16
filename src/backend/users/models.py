@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from database import AppBaseClass
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import text
+
+from database import AppBaseClass
 from users.constants import (
     USER_NAME_MAX_LENGTH,
     USER_PASSWORD_MAX_LENGTH,
@@ -42,37 +43,27 @@ class UsersOrm(AppBaseClass):
     __tablename__ = 'auth_user'
 
     username: Mapped[str] = mapped_column(
-        String(USER_NAME_MAX_LENGTH), nullable=False, unique=True
-    )
+        String(USER_NAME_MAX_LENGTH), nullable=False, unique=True)
     password: Mapped[str] = mapped_column(
-        String(USER_PASSWORD_MAX_LENGTH), nullable=False
-    )
+        String(USER_PASSWORD_MAX_LENGTH), nullable=False)
     role_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey('auth_role.id', ondelete='CASCADE'), nullable=False
-    )
+        Integer, ForeignKey('auth_role.id', ondelete='CASCADE'), nullable=False)
     is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, server_default=text('true'), nullable=False
-    )
+        Boolean, default=True, server_default=text('true'), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), nullable=False
-    )
+        DateTime, server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
-    )
+        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
     created_by_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey('auth_user.id', ondelete='SET NULL'), nullable=True
-    )
+        Integer, ForeignKey('auth_user.id', ondelete='SET NULL'), nullable=True)
     updated_by_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey('auth_user.id', ondelete='SET NULL'), nullable=True
-    )
+        Integer, ForeignKey('auth_user.id', ondelete='SET NULL'), nullable=True)
 
     role: Mapped[RolesOrm] = relationship(
-        'RolesOrm', back_populates='user', lazy='joined'
-    )
+        'RolesOrm', back_populates='user', lazy='joined')
 
     session: Mapped['SessionsOrm'] = relationship(  # noqa: F821 # pyright: ignore[reportUndefinedVariable]
-        'SessionsOrm', back_populates='user'
-    )
+        'SessionsOrm', back_populates='user')
 
     created_by: Mapped['UsersOrm'] = relationship(
         'UsersOrm',

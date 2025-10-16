@@ -3,11 +3,14 @@ from datetime import datetime
 from functools import partial
 from typing import Callable
 
-from config import settings as s
 from fastapi import Depends
 from nicegui import APIRouter, ui
+from pydantic import ValidationError
+
+from config import settings as s
 from pages.dependencies import get_current_user, get_edit_users_permission
 from pages.layout import navbar
+import pages.styles as st
 from pages.urls import LOGIN_PAGE_URL, USERS_PAGE_URL
 from pages.users.constants import (
     USER_NAME_MAX_LENGTH,
@@ -23,71 +26,67 @@ from pages.users.schemas import (
 )
 from pages.users.service import users_api_client
 from pages.utils import build_url
-from pydantic import ValidationError
 
 users_router = APIRouter(prefix=USERS_PAGE_URL)
 
 
 def _user_list_filters(
-    roles: dict | None, role: int | None = None, is_active: bool | None = None, name: str | None = None
+    roles: dict | None,
+    role: int | None = None,
+    is_active: bool | None = None,
+    name: str | None = None,
+    permission: bool = False,
 ) -> Callable:
     """Вспомогательная функция вывода фильтров в списке пользователей."""
-    with ui.row():
-        role_select = ui.select(
-            options={None: 'Все записи'} | roles, # pyright: ignore[reportOperatorIssue]
-            label='Роль: ',
-            value=role,
-            on_change=lambda: ui.navigate.to(
-                build_url(
-                    USERS_PAGE_URL,
-                    role=role_select.value,
-                    is_active=is_active,
-                    name=name,
-                )
-            ),
-        )
-        is_active_select = ui.select(
-            options={None: 'Все записи', True: 'Активные', False: 'Неактивные'},
-            label='Активность: ',
-            value=is_active,
-            on_change=lambda: ui.navigate.to(
-                build_url(
-                    USERS_PAGE_URL,
-                    role=role_select.value,
-                    is_active=is_active_select.value,
-                    name=name,
-                )
-            ),
-        )
-        username_input = ui.input(
-            label='Имя: ',
-            value=name if name else '',
-            validation={
-                'Введите не более 10 символов': lambda value: value is None
-                or len(value) < 10
-            },
-        ).props('clearable')
-        username_input.on(
-            type='keydown.enter',
-            handler=lambda: ui.navigate.to(
-                build_url(
-                    USERS_PAGE_URL,
-                    role=role_select.value,
-                    is_active=is_active_select.value,
-                    name=username_input.value,
-                )
-            ),
-        )
-        username_input.on(
-            type='clear',
-            handler=lambda: ui.navigate.to(
-                build_url(
-                    USERS_PAGE_URL,
-                    role=role_select.value,
-                    is_active=is_active_select.value,
-                )
-            ),
-        )
+    with ui.card().classes(st.FULL_WIDTH):
+        with ui.row().classes(st.FULL_WIDTH + ' items-stretch gap-4'):
+            role_select = ui.select(
+                options={None: 'Все записи'} | roles,
+                label='Роль: ',
+                value=role,
+                on_change=lambda: ui.navigate.to(
+                    build_url(
+                        USERS_PAGE_URL,
+                        role=role_select.value,
+                        is_active=is_active,
+                        name=name)),
+            ).props(st.INPUT_PROPS).classes(st.QUARTER_WIDTH)
+            is_active_select = ui.select(
+                options={None: 'Все записи', True: 'Активные', False: 'Неактивные'},
+                label='Активность: ',
+                value=is_active,
+                on_change=lambda: ui.navigate.to(
+                    build_url(
+                        USERS_PAGE_URL,
+                        role=role_select.value,
+                        is_active=is_active_select.value,
+                        name=name)),
+            ).props(st.INPUT_PROPS).classes(st.QUARTER_WIDTH)
+            username_input = ui.input(
+                label='Поиск по имени: ',
+                value=name if name else '',
+                validation={
+                    'Введите не более 10 символов': lambda value: value is None
+                    or len(value) < 10},
+            ).props('clearable').props(st.INPUT_PROPS).classes(st.QUARTER_WIDTH)
+            username_input.on(
+                type='keydown.enter',
+                handler=lambda: ui.navigate.to(
+                    build_url(
+                        USERS_PAGE_URL,
+                        role=role_select.value,
+                        is_active=is_active_select.value,
+                        name=username_input.value)))
+            username_input.on(
+                type='clear',
+                handler=lambda: ui.navigate.to(
+                    build_url(
+                        USERS_PAGE_URL,
+                        role=role_select.value,
+                        is_active=is_active_select.value)))
+
+            # Выводим кнопку Создать нового пользователя
+            ui.button('Создать', on_click=lambda: ui.navigate.to('create')).props(st.BUTTON_PROPS).classes(st.BUTTON_CENTERED).visible = permission
 
     def navigate_to_filtered_list(current_page: int) -> None:
         ui.navigate.to(
@@ -134,30 +133,28 @@ async def _edit_user_form_handler(
     roles: dict | None = await users_api_client.get_roles()
 
     with ui.grid(columns=2):
-        ui.label('id: ').classes('text-subtitle2')
-        ui.label(user_data['id']).classes('text-subtitle2')
+        ui.label('id: ').classes(st.LABEL_BOLD)
+        ui.label(user_data['id']).classes(st.LABEL)
 
-        ui.label('Имя пользователя: ').classes('text-subtitle2')
-        ui.label(user_data['username']).classes('text-h6')
+        ui.label('Имя пользователя: ').classes(st.LABEL_BOLD)
+        ui.label(user_data['username']).classes(st.LABEL)
 
         # Поля формы связываем с ключами словаря
-        ui.label('Роль: ').classes('text-subtitle2')
-        ui.select(options=roles, value=user_data['role']['id']).bind_value_to(
-            user_data['role'], 'id'
-        )
+        ui.label('Роль: ').classes(st.LABEL_BOLD)
+        ui.select(options=roles, value=user_data['role']['id']).bind_value_to(user_data['role'], 'id').props(st.INPUT_PROPS)
 
-        ui.label('Активен: ').classes('text-subtitle2')
+        ui.label('Активен: ').classes(st.LABEL_BOLD)
         ui.checkbox(
             value=user_data['is_active'],
-        ).bind_value_to(user_data, 'is_active')
+        ).bind_value_to(user_data, 'is_active').props(st.INPUT_PROPS)
 
-        ui.label('Пароль: ').classes('text-subtitle2')
+        ui.label('Пароль: ').classes(st.LABEL_BOLD)
         ui.input(
             placeholder=f'Введите значение длиной не менее {USER_PASSWORD_MIN_LENGTH} знаков и не более {USER_PASSWORD_MAX_LENGTH} символов',
             password=True,
             password_toggle_button=True,
             validation=lambda value: _validate_password(value),
-        ).bind_value_to(user_data, 'password')
+        ).props(st.INPUT_PROPS).classes(st.INPUT).bind_value_to(user_data, 'password')
 
     # Работаем с датой в виде строки, конвертирую по-простому. Модель Pydantic?
     user_data['created_at'], user_data['updated_at'] = [
@@ -167,7 +164,7 @@ async def _edit_user_form_handler(
 
     ui.label(
         f'Запись создана: {user_data["created_at"]} пользователем {user_data["created_by"]["username"]}, изменена {user_data["updated_at"]} пользователем {user_data["updated_by"]["username"]}'
-    ).classes('text-subtitle2')
+    ).classes(st.LABEL)
 
 
 async def _create_user_form_handler(
@@ -179,24 +176,22 @@ async def _create_user_form_handler(
 
     # Поля формы связываем с ключами словаря
     with ui.grid(columns=2):
-        ui.label('Имя пользователя: ').classes('text-subtitle2')
+        ui.label('Имя пользователя: ').classes(st.LABEL_BOLD)
         ui.input(
             placeholder='Введите значение, состоящее из латинских букв',
             validation=lambda value: _validate_username(value),
-        ).classes('w-full').bind_value_to(new_user_data, 'username')
+        ).props(st.INPUT_PROPS).classes(st.INPUT).bind_value_to(new_user_data, 'username')
 
-        ui.label('Роль: ').classes('text-subtitle2')
-        ui.select(options=roles, value=list(roles.keys())[0]).bind_value_to(
-            new_user_data, 'role_id'
-        )
+        ui.label('Роль: ').classes(st.LABEL_BOLD)
+        ui.select(options=roles, value=list(roles.keys())[0]).bind_value_to(new_user_data, 'role_id').props(st.INPUT_PROPS)
 
-        ui.label('Пароль: ').classes('text-subtitle2')
+        ui.label('Пароль: ').classes(st.LABEL_BOLD)
         ui.input(
             placeholder=f'Введите значение длиной не менее {USER_PASSWORD_MIN_LENGTH} знаков и не более {USER_PASSWORD_MAX_LENGTH} символов',
             password=True,
             password_toggle_button=True,
             validation=lambda value: _validate_password(value),
-        ).bind_value_to(new_user_data, 'password')
+        ).props(st.INPUT_PROPS).classes(st.INPUT).bind_value_to(new_user_data, 'password')
 
 
 async def _save_user_button_handler(
@@ -250,39 +245,35 @@ async def users_list_page(
 
     # Получаем список пользователей согласно фильтрам
     users_list: UsersListPageSchema | None = await users_api_client.get_users(
-        page, role, is_active, name  # pyright: ignore[reportArgumentType]
-    )
+        page, role, is_active, name)
 
     # Получаем список ролей для опции фильтрации
     roles: dict | None = await users_api_client.get_roles()
 
     # Выводим заголовок
-    ui.item_label('Пользователи').props('header').classes('text-bold text-h4')
-    ui.item_label(f'Всего записей: {users_list.total}').props('header').classes(  # pyright: ignore[reportOptionalMemberAccess]
-        'text-h6'
-    )
+    ui.item_label('Пользователи').classes(st.PAGE_HEADER)
+    ui.item_label(f'Всего записей: {users_list.total}').classes(st.PAGE_SUBHEADER)
 
     # Выводим фильтры записей в списке, получаем функцию для перехода по страницам
-    navigate_func: Callable = _user_list_filters(roles, role, is_active, name)
-
-    # Выводим кнопку Создать нового пользователя
-    ui.button('Создать', on_click=lambda: ui.navigate.to('create')).visible = permission
+    navigate_func: Callable = _user_list_filters(roles, role, is_active, name, permission)
 
     # Выводим список пользователей
     for user in users_list.items:  # pyright: ignore[reportOptionalMemberAccess]
         with ui.card().classes('w-full'):
-            with ui.grid(columns=2):
-                ui.label('id').classes('text-subtitle2')
-                ui.label(user.id).classes('text-subtitle2')  # pyright: ignore[reportArgumentType]
-                ui.label('Имя').classes('text-subtitle2')
-                ui.label(user.username).classes('text-subtitle2')
-                ui.label('Роль').classes('text-subtitle2')
-                ui.label(user.role.name).classes('text-subtitle2')
-                ui.label('Активен').classes('text-subtitle2')
-                ui.label(str(user.is_active)).classes('text-subtitle2')
-                ui.button(
-                    'ИЗМЕНИТЬ', on_click=lambda s_id=user.id: ui.navigate.to(f'{s_id}')
-                ).visible = permission
+            with ui.row().classes(st.ROW):
+                with ui.column():
+                    ui.label('id').classes(st.LABEL_BOLD)
+                    ui.label('Имя').classes(st.LABEL_BOLD)
+                    ui.label('Роль').classes(st.LABEL_BOLD)
+                    ui.label('Активен').classes(st.LABEL_BOLD)
+                with ui.column():
+                    ui.label(user.id).classes(st.LABEL)
+                    ui.label(user.username).classes(st.LABEL)
+                    ui.label(user.role.name).classes(st.LABEL)
+                    ui.label(str(user.is_active)).classes(st.LABEL)
+                    ui.button(
+                        'ИЗМЕНИТЬ', on_click=lambda s_id=user.id: ui.navigate.to(f'{s_id}')
+                    ).props(st.BUTTON_PROPS).classes(st.BUTTON).visible = permission
 
     # Выводим кнопки пагинации
     if users_list.pages > 1:
@@ -292,7 +283,7 @@ async def users_list_page(
             value=users_list.page,
             direction_links=True,
             on_change=lambda: navigate_func(current_page.value),
-        )
+        ).props(st.PAGINATION_PROPS).classes(st.PAGINATION)
 
 
 @users_router.page('/create', title='Создание пользователя')
@@ -319,7 +310,7 @@ async def user_create_page(
     }
 
     # Выводим заголовок
-    ui.item_label('Новый пользователь').props('header').classes('text-bold text-h4')
+    ui.item_label('Новый пользователь').classes(st.PAGE_HEADER)
 
     with ui.card().classes('w-full'):
         # Выводим поля формы и связывает переменные
@@ -328,14 +319,12 @@ async def user_create_page(
         with ui.row():
             ui.button(
                 'СОХРАНИТЬ',
-                on_click=partial(
-                    lambda: _save_user_button_handler(new_user_data, action='create')
-                ),
-            )
-            ui.button('НАЗАД', on_click=ui.navigate.back)
+                on_click=partial(lambda: _save_user_button_handler(new_user_data, action='create'))
+            ).props(st.BUTTON_PROPS).classes(st.BUTTON)
+            ui.button('НАЗАД', on_click=ui.navigate.back).props(st.BUTTON_PROPS).classes(st.BUTTON)
 
 
-@users_router.page('/{id}', title='Изменение пользователя')
+@users_router.page('/{user_id}', title='Изменение пользователя')
 async def user_edit_page(
     user_id: int,
     current_user: UserReadSchema = Depends(get_current_user),
@@ -359,9 +348,7 @@ async def user_edit_page(
         ui.button('НАЗАД', on_click=ui.navigate.back)
     else:
         # Выводим заголовки страницы
-        ui.item_label('Изменение пользователя').props('header').classes(
-            'text-bold text-h4'
-        )
+        ui.item_label('Изменение пользователя').classes(st.PAGE_HEADER)
         # Выводим поля формы пользователя
         with ui.card().classes('w-full'):
             await _edit_user_form_handler(user_data)
@@ -369,8 +356,6 @@ async def user_edit_page(
                 # Выводим кнопки Сохранить и Назад
                 ui.button(
                     'СОХРАНИТЬ',
-                    on_click=partial(
-                        lambda: _save_user_button_handler(user_data, action='update')
-                    ),
-                )
-                ui.button('НАЗАД', on_click=ui.navigate.back)
+                    on_click=partial(lambda: _save_user_button_handler(user_data, action='update'))
+                ).props(st.BUTTON_PROPS).classes(st.BUTTON)
+                ui.button('НАЗАД', on_click=ui.navigate.back).props(st.BUTTON_PROPS).classes(st.BUTTON)

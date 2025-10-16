@@ -3,6 +3,7 @@ import asyncio
 from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
+
 from config import settings as s
 from core.dispatcher import dispatcher
 from core.log import logger

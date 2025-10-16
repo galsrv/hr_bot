@@ -1,8 +1,11 @@
-from base_service import BaseService
 from fastapi import HTTPException, status
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import paginate
 from loguru import logger
+from sqlalchemy import func, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from base_service import BaseService
 from messages.constants import (
     ERROR_MESSAGE_EMPLOYEE_NOT_EXIST,
     ERROR_MESSAGE_NO_PERMISSION,
@@ -16,8 +19,6 @@ from messages.schemas import (
     EmployeeCreareSchema,
     MessageCreateSchema,
 )
-from sqlalchemy import func, select, update
-from sqlalchemy.ext.asyncio import AsyncSession
 from users.models import UsersOrm
 from users.service import user_service
 

@@ -1,8 +1,9 @@
 from datetime import datetime
 
+from pydantic import BaseModel, ConfigDict, computed_field
+
 from config import settings as s
 from pages.users.schemas import UserRelationshipSchema
-from pydantic import BaseModel, ConfigDict, computed_field
 
 
 class CustomDateFormat:

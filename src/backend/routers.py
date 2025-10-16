@@ -1,6 +1,7 @@
+from fastapi import APIRouter
+
 from auth.views import auth_router
 from bot_settings.views import botsettings_router
-from fastapi import APIRouter
 from menu.views import menu_router
 from messages.views import messages_router
 from users.views import users_router

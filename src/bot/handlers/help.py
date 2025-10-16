@@ -1,6 +1,7 @@
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
+
 from config import BotSettings
 
 help_router = Router(name=__name__)

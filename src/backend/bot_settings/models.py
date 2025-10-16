@@ -1,11 +1,12 @@
+from sqlalchemy import Boolean, String, text
+from sqlalchemy.orm import Mapped, mapped_column
+
 from bot_settings.constants import (
     SETTING_DESCRIPTION_MAX_LEN,
     SETTING_NAME_MAX_LEN,
     SETTING_VALUE_MAX_LEN,
 )
 from database import AppBaseClass
-from sqlalchemy import Boolean, String, text
-from sqlalchemy.orm import Mapped, mapped_column
 
 
 class BotSettingsOrm(AppBaseClass):
@@ -23,7 +24,7 @@ class BotSettingsOrm(AppBaseClass):
     )
 
     def to_dict(self) -> dict:
-        """Используется для выгрузки в csv"""
+        """Используется для выгрузки в csv."""
         return {
             'name': self.name,
             'value': self.value,

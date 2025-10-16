@@ -1,7 +1,8 @@
-from database import get_async_session
 from fastapi import APIRouter, Depends, status
 from fastapi_pagination import Page, Params
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from database import get_async_session
 from users.schemas import (
     RoleReadSchema,
     UserCreateSchema,
@@ -44,7 +45,7 @@ async def retrieve_users(
 
 
 @users_router.get(
-    '/{id}', response_model=UserReadSchema, summary='Получить пользователя'
+    '/{user_id}', response_model=UserReadSchema, summary='Получить пользователя'
 )
 async def retrieve_user(
     user_id: int, session: AsyncSession = Depends(get_async_session)
@@ -69,7 +70,7 @@ async def create_user(
 
 
 @users_router.patch(
-    '/{id}', response_model=UserReadSchema, summary='Изменить пользователя'
+    '/{user_id}', response_model=UserReadSchema, summary='Изменить пользователя'
 )
 async def change_user(
     user_id: int,

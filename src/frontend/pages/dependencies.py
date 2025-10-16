@@ -1,4 +1,5 @@
 from fastapi import Depends, Request
+
 from pages.auth.service import auth_api_client
 from pages.users.schemas import UserReadSchema
 

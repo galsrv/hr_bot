@@ -1,13 +1,15 @@
 from typing import Any
 
-from log import logger
 from pydantic import BaseModel, ValidationError
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from log import logger
 from utils import read_csv, write_csv
 
 
 class BaseService:
+    """Базовый класс сервисных методов обращения в БД."""
     def __init__(self, model):
         """Инициализация объекта класса."""
         self.model = model
@@ -73,6 +75,7 @@ class BaseService:
         session: AsyncSession,
         obj_id: int,
     ) -> None:
+        """Удаляем запись из таблицы по ключу."""
         query = delete(self.model).where(self.model.id == obj_id)
         await session.execute(query)
         await session.commit()
@@ -84,12 +87,12 @@ class BaseService:
         self,
         session: AsyncSession,
     ) -> None:
+        """Удаляем все записи из таблицы."""
         query = delete(self.model)
         await session.execute(query)
         await session.commit()
         logger.log(
-            'DB_ACCESS', f'All data from model={self.model.__name__} was deleted'
-        )
+            'DB_ACCESS', f'All data from model={self.model.__name__} was deleted')
 
     async def upload_data(
         self,
@@ -97,7 +100,7 @@ class BaseService:
         filepath: str,
         pydantic_model: type[BaseModel],
         created_by_id: int = None,
-    ):
+    ) -> None:
         """Загружаем данные в таблицу БД, делая предварительно копию."""
         # Сначала делаем бэкап и потом затираем текущие данные в таблице БД
         try:
@@ -134,9 +137,15 @@ class BaseService:
             f'✅ The data from {filepath} was uploaded to {self.model.__name__} DB table, {len(data)} rows in total'
         )
 
-    async def download_data(self, session: AsyncSession, filepath: str):
+    async def download_data(self, session: AsyncSession, filepath: str) -> None:
         """Выгружаем данные в csv-файл."""
         entries = await self.get_all(session)
+
+        if len(entries) == 0:
+            logger.info(
+                f'⚠️ Attempt to backup {self.model.__name__}. Table is empty. Proceed.')
+            return
+
         if hasattr(self.model, 'to_dict'):
             headers = entries[0].to_dict().keys()
             entries: list[dict] = [
@@ -145,8 +154,7 @@ class BaseService:
 
             await write_csv(entries, filepath)
             logger.info(
-                f'✅ The data of {self.model.__name__} was downloaded to the file {filepath}'
-            )
+                f'✅ The data of {self.model.__name__} was downloaded to the file {filepath}')
         else:
             logger.warning(
                 f'❌ Error while downloading data of {self.model.__name__}. Model has to have to_dict method'

@@ -1,5 +1,6 @@
 from aiohttp import ClientResponse, ClientSession
 from fastapi import status
+
 from log import logger
 from pages.utils import url_shortener
 

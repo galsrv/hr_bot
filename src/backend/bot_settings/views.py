@@ -1,3 +1,6 @@
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from bot_settings.models import BotSettingsOrm
 from bot_settings.schemas import (
     SettingCreateSchema,
@@ -7,8 +10,6 @@ from bot_settings.schemas import (
 from bot_settings.service import bot_settings_service
 from config import settings as s
 from database import get_async_session
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
 botsettings_router = APIRouter()
 
@@ -27,27 +28,27 @@ async def get_settings(
 
 
 @botsettings_router.get(
-    '/{id}', response_model=SettingsReadSchema, summary='Получить настройку проекта'
+    '/{setting_id}', response_model=SettingsReadSchema, summary='Получить настройку проекта'
 )
 async def get_one_setting(
-    id: int,
+    setting_id: int,
     session: AsyncSession = Depends(get_async_session),
 ) -> SettingsReadSchema:
     """Эндпоинт получения одной настройки проекта."""
-    setting: BotSettingsOrm | None = await bot_settings_service.get_setting(session, id)
+    setting: BotSettingsOrm | None = await bot_settings_service.get_setting(session, setting_id)
     return setting
 
 
 @botsettings_router.patch(
-    '/{id}', response_model=SettingsReadSchema, summary='Изменить настройку проекта'
+    '/{setting_id}', response_model=SettingsReadSchema, summary='Изменить настройку проекта'
 )
 async def change_setting(
-    id: int,
+    setting_id: int,
     data_input: SettingsChangeSchema,
     session: AsyncSession = Depends(get_async_session),
 ) -> SettingsReadSchema:
     """Эндпоинт изменения настройки проекта."""
-    setting = await bot_settings_service.update_setting(session, id, data_input)
+    setting = await bot_settings_service.update_setting(session, setting_id, data_input)
     return setting
 
 
@@ -56,7 +57,7 @@ async def change_setting(
 )
 async def download_settings(
     session: AsyncSession = Depends(get_async_session),
-):
+) -> None:
     """Эндпоинт выгрузки настроек проекта в файл."""
     await bot_settings_service.download_data(session, s.FIXTURES_SETTINGS_PATH)
 
@@ -66,7 +67,7 @@ async def download_settings(
 )
 async def upload_settings(
     session: AsyncSession = Depends(get_async_session),
-):
+) -> None:
     """Эндпоинт загрузки настроек из файла."""
     await bot_settings_service.upload_data(
         session, s.FIXTURES_SETTINGS_PATH, SettingCreateSchema

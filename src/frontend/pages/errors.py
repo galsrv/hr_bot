@@ -1,7 +1,6 @@
 from fastapi import HTTPException, status
 from nicegui import app as nicegui_app
 from nicegui import ui
-from pages.layout import layout_decorator
 
 
 @ui.page('/raise_404_error')
@@ -12,7 +11,6 @@ def raise_404_error() -> None:
 
 # Практически бесполезно - срабатывает только при ошибке в коде вью-функции
 @nicegui_app.on_page_exception
-@layout_decorator
 def custom_error_page(exception: HTTPException) -> None:
     """Кастомная страница ошибок."""
     if not isinstance(exception, HTTPException):

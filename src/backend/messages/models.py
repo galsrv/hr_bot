@@ -1,10 +1,5 @@
 from datetime import datetime
 
-from database import AppBaseClass
-from messages.constants import (
-    EMPLOYEE_NAME_MAX_LENGTH,
-    MESSAGE_TEXT_MAX_LENGTH,
-)
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -18,6 +13,12 @@ from sqlalchemy import (
     text as t,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from database import AppBaseClass
+from messages.constants import (
+    EMPLOYEE_NAME_MAX_LENGTH,
+    MESSAGE_TEXT_MAX_LENGTH,
+)
 
 
 class MessagesOrm(AppBaseClass):

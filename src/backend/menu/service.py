@@ -1,8 +1,11 @@
-from base_service import BaseService
 from fastapi import HTTPException, status
 from fastapi_pagination import Page, Params
-from fastapi_pagination.ext.sqlalchemy import paginate
+from fastapi_pagination.ext.sqlalchemy import apaginate
 from loguru import logger
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from base_service import BaseService
 from menu.constants import (
     ERROR_MESSAGE_BUTTON_TEXT_NAME_TAKEN,
     ERROR_MESSAGE_ENTRY_DOESNT_EXIST,
@@ -13,8 +16,6 @@ from menu.schemas import (
     MenuItemCreateSchema,
     MenuItemUpdateSchema,
 )
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from users.models import UsersOrm
 from users.service import user_service
 
@@ -105,7 +106,7 @@ class MenuService(BaseService):
     ) -> Page:
         """Получаем страницу с элементами справочника."""
         query = select(self.model).order_by(*self.model.__order_by__)
-        result: Page = await paginate(session, query, page_params)
+        result: Page = await apaginate(session, query, page_params)
         logger.log(
             'DB_ACCESS',
             f'Data retrieve: model={self.model.__name__}, {len(result.items)} entries retrieved',

@@ -1,3 +1,6 @@
+from fastapi import HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from base_service import BaseService
 from bot_settings.constants import (
     ERROR_MESSAGE_INT_TYPE,
@@ -6,8 +9,6 @@ from bot_settings.constants import (
 )
 from bot_settings.models import BotSettingsOrm
 from bot_settings.schemas import SettingsChangeSchema
-from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class BotSettingsService(BaseService):

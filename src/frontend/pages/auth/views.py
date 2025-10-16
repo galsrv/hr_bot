@@ -1,11 +1,13 @@
 import asyncio
 
 from fastapi import Depends, Request
-from log import logger
 from nicegui import APIRouter, ui
+
+from log import logger
 from pages.auth.service import auth_api_client
 from pages.dependencies import get_current_user
 from pages.layout import navbar
+import pages.styles as st
 from pages.urls import (
     AUTH_PAGE_URL,
     LOGIN_PAGE_URL,
@@ -23,14 +25,14 @@ def _user_login_form(login_data: dict) -> None:
         ui.input(
             label='Имя пользователя',
             placeholder='Введите имя пользователя',
-        ).classes('w-full').bind_value_to(login_data, 'username')
+        ).props(st.INPUT_PROPS).classes(st.INPUT).bind_value_to(login_data, 'username')
     with ui.row():
         ui.input(
             label='Пароль',
             placeholder='Введите пароль',
             password=True,
             password_toggle_button=True,
-        ).classes('w-full').bind_value_to(login_data, 'password')
+        ).props(st.INPUT_PROPS).classes(st.INPUT).bind_value_to(login_data, 'password')
 
 
 async def _user_login_button_handler(
@@ -73,12 +75,12 @@ async def user_login(
     login_data = {'username': None, 'password': None}
 
     # Выводим заголовок
-    ui.item_label('Войдите в систему').props('header').classes('text-bold text-h4')
+    ui.item_label('Войдите в систему').classes(st.PAGE_HEADER)
 
     with ui.card().classes('w-full'):
         # Выводим поля формы
         _user_login_form(login_data=login_data)
-        ui.button('ВОЙТИ', on_click=lambda: _user_login_button_handler(login_data))
+        ui.button('ВОЙТИ', on_click=lambda: _user_login_button_handler(login_data)).props(st.BUTTON_PROPS).classes(st.BUTTON)
 
 
 @auth_router.page('/logout', title='Выход')

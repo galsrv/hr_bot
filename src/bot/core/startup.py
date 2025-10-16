@@ -1,6 +1,7 @@
 import asyncio
 
 from aiogram import Bot, Dispatcher
+
 from config import BotSettings
 from config import settings as s
 from core.service import ApiClientException, api_client

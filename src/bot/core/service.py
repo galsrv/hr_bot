@@ -3,6 +3,7 @@ from http import HTTPStatus
 from typing import Any, Callable
 
 from aiohttp import ClientSession
+
 from config import settings as s
 from core.log import logger
 

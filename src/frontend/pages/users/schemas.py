@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Optional
 
+from pydantic import BaseModel, ConfigDict, Field, computed_field
+
 from pages.users.constants import (
     USERNAME_REGEXP,
     USER_NAME_MAX_LENGTH,
@@ -8,7 +10,6 @@ from pages.users.constants import (
     USER_PASSWORD_MAX_LENGTH,
     USER_PASSWORD_MIN_LENGTH,
 )
-from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 
 class CustomDateFormat:

@@ -3,6 +3,7 @@ from functools import partial
 
 from fastapi import Depends
 from nicegui import APIRouter, ui
+
 from pages.dependencies import get_current_user, get_send_messages_permission
 from pages.layout import navbar
 from pages.messages.constants import (
@@ -14,6 +15,7 @@ from pages.messages.schemas import (
     EmployeeChatSchema,
 )
 from pages.messages.service import messages_api_client
+import pages.styles as st
 from pages.urls import LOGIN_PAGE_URL, MESSAGES_PAGE_URL
 from pages.users.schemas import UserReadSchema
 
@@ -65,23 +67,24 @@ async def chats_list_page(
     chats: list[EmployeeChatListSchema] = await messages_api_client.get_chats()
 
     # Выводим заголовок
-    ui.item_label('Чаты').props('header').classes('text-bold text-h4')
+    ui.item_label('Чаты').classes(st.PAGE_HEADER)
 
     # Выводим список чатов
     for chat in chats:
         with ui.card().classes('w-full'):
             with ui.row():
-                ui.label(chat.name).classes('text-subtitle2')
-                ui.label(chat.unread_count).classes(
-                    'text-subtitle2 text-white bg-red rounded-lg'
-                )
-                ui.button(
+                ui.label(str(chat.id) + ' - ' + chat.name).classes(st.LABEL_BOLD + ' self-center')
+                if chat.is_banned:
+                    ui.chip('БАН', icon='block', color='red')
+                with ui.button(
                     'ПЕРЕЙТИ',
                     on_click=lambda s_id=chat.id: ui.navigate.to(f'{s_id}/chat'),
-                )
+                ).props(st.BUTTON_PROPS).classes(st.BUTTON):
+                    if chat.unread_count:
+                        ui.badge(chat.unread_count, color='red').props('floating')
 
 
-@messages_router.page('/{id}/chat', title='Чат с сотрудником')
+@messages_router.page('/{chat_id}/chat', title='Чат с сотрудником')
 async def chat_page(
     chat_id: int,
     current_user: UserReadSchema = Depends(get_current_user),
@@ -97,23 +100,24 @@ async def chat_page(
     chat: EmployeeChatSchema = await messages_api_client.get_chat(chat_id)
 
     # Выводим заголовки страницы
-    ui.item_label(f'Чат с сотрудником {chat.name}').props('header').classes(
-        'text-bold text-h4'
-    )
+    ui.item_label(f'Чат с сотрудником {chat.name}').classes(st.PAGE_HEADER)
     if chat.is_banned:
-        ui.item_label('БАН').props('header').classes('text-bold text-h4 text-red')
+        ui.item_label('БАН').classes(st.LABEL_RED)
     # Выводим чат
-    with ui.card().classes('w-full'):
+
+    with ui.card().classes(st.THIRD_WIDTH):
         for message in chat.messages.items:
-            message_element = ui.chat_message(
-                text=message.text,
-                name=chat.name if message.manager is None else message.manager.username,
-                sent=bool(message.manager),
-                stamp=message.created_at_str,
-            )
-            # Выделяем непрочитанные сообщения
-            if not message.is_read:
-                message_element.classes('text-bold')
+            with ui.row().classes('w-full mb-2'):
+                with ui.row().classes(st.ALIGN_RIGTH if bool(message.manager) else st.ALIGN_LEFT):
+                    message_element = ui.chat_message(
+                        text=message.text,
+                        name=chat.name if message.manager is None else message.manager.username,
+                        sent=bool(message.manager),
+                        stamp=message.created_at_str,
+                    ).classes('inline-block max-w-[70%]')
+                    # Выделяем непрочитанные сообщения
+                    if not message.is_read:
+                        message_element.classes(st.LABEL_BOLD)
 
     await messages_api_client.mark_chat_as_read(chat_id)
 
@@ -127,24 +131,16 @@ async def chat_page(
                     < len(value)
                     < MESSAGE_TEXT_MAX_LENGTH
                 },
-            ).classes('w-full')
+            ).props(st.INPUT_PROPS).classes(st.INPUT)
             ui.button(
                 'ОТПРАВИТЬ',
                 on_click=partial(
-                    lambda: _send_message_button_handler(
-                        chat.id, new_message_input.value, current_user.id
-                    )
-                ),
-            )
-            ban_button_title = (
-                'РАЗБАНИТЬ СОТРУДНИКА' if chat.is_banned else 'ЗАБАНИТЬ СОТРУДНИКА'
-            )
+                    lambda: _send_message_button_handler(chat.id, new_message_input.value, current_user.id)),
+            ).props(st.BUTTON_PROPS).classes(st.BUTTON)
+            ban_button_title = 'РАЗБАНИТЬ СОТРУДНИКА' if chat.is_banned else 'ЗАБАНИТЬ СОТРУДНИКА'
             ui.button(
                 ban_button_title,
                 on_click=partial(
-                    lambda: _ban_unban_employee_button_handler(
-                        chat.id, chat.is_banned, current_user.id
-                    )
-                ),
-            )
-        ui.button('НАЗАД', on_click=ui.navigate.back)
+                    lambda: _ban_unban_employee_button_handler(chat.id, chat.is_banned, current_user.id)),
+            ).props(st.BUTTON_PROPS).classes(st.BUTTON)
+        ui.button('НАЗАД', on_click=ui.navigate.back).props(st.BUTTON_PROPS).classes(st.BUTTON)

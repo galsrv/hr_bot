@@ -5,6 +5,9 @@ from routers import main_router
 
 nicegui_app.include_router(main_router)
 
+# nicegui_app.add_tailwind()
+ui.colors(primary='indigo', secondary='gray', accent='blue')
+
 ui.run(
     title=settings.APP_TITLE,
     host=settings.HOST,

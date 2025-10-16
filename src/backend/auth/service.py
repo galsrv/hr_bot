@@ -1,3 +1,7 @@
+from fastapi import HTTPException, status
+from sqlalchemy import delete
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from auth.constants import (
     ERROR_MESSAGE_WRONG_LOGIN_DATA,
 )
@@ -5,9 +9,6 @@ from auth.models import SessionsOrm
 from auth.schemas import SessionCreateSchema, SessionInSchema
 from auth.utils import verify_password
 from base_service import BaseService
-from fastapi import HTTPException, status
-from sqlalchemy import delete
-from sqlalchemy.ext.asyncio import AsyncSession
 from users.models import UsersOrm
 from users.schemas import UserLoginSchema
 from users.service import user_service

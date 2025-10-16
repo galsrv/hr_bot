@@ -2,12 +2,13 @@ import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime
 
-from auth.constants import SESSION_CLEANUP_FREQ_IN_HOURS
-from auth.models import SessionsOrm
-from database import AsyncSessionLocal
 from fastapi import FastAPI
 from loguru import logger
 from sqlalchemy import delete, or_
+
+from auth.constants import SESSION_CLEANUP_FREQ_IN_HOURS
+from auth.models import SessionsOrm
+from database import AsyncSessionLocal
 
 
 async def cleanup_sessions_task():

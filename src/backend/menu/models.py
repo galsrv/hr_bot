@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from database import AppBaseClass
-from menu.constants import MENU_ANSWER_MAX_LENGTH, MENU_BUTTON_TEXT_MAX_LENGTH
 from sqlalchemy import DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from database import AppBaseClass
+from menu.constants import MENU_ANSWER_MAX_LENGTH, MENU_BUTTON_TEXT_MAX_LENGTH
 from users.models import UsersOrm
 
 

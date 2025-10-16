@@ -1,6 +1,7 @@
-from config import settings
 from fastapi import status
 from httpx import AsyncClient
+
+from config import settings
 from messages.constants import MESSAGE_FROM_MANAGER_PREFIX
 
 

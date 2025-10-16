@@ -1,8 +1,9 @@
 from datetime import datetime
 
+from pydantic import BaseModel, ConfigDict, Field
+
 from pages.menu.constants import MENU_ANSWER_MAX_LENGTH, MENU_BUTTON_TEXT_MAX_LENGTH
 from pages.users.schemas import UserRelationshipSchema
-from pydantic import BaseModel, ConfigDict, Field
 
 
 class MenuItemCreateSchema(BaseModel):

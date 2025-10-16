@@ -3,6 +3,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 from aiogram.types.callback_query import CallbackQuery
+
 from config import BotCallback, BotDir, BotSettings
 from core.service import ApiClientException, api_client
 

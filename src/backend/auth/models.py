@@ -1,11 +1,12 @@
 from datetime import datetime
 
-from auth.constants import SESSION_DURATION_IN_DAYS, SESSION_ID_LENGTH
-from auth.utils import create_random_session_string
-from database import AppBaseClass
 from sqlalchemy import DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import text
+
+from auth.constants import SESSION_DURATION_IN_DAYS, SESSION_ID_LENGTH
+from auth.utils import create_random_session_string
+from database import AppBaseClass
 from users.models import UsersOrm
 
 

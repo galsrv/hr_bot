@@ -1,9 +1,10 @@
 import uvicorn
+from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
+
 from auth.tasks import lifespan_tasks
 from config import settings
 from exceptions import validation_exception_handler
-from fastapi import FastAPI
-from fastapi.exceptions import RequestValidationError
 from routers import main_router
 
 fastapi_app = FastAPI(title=settings.APP_TITLE, lifespan=lifespan_tasks)

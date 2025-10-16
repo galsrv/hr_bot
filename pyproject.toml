@@ -1,7 +1,7 @@
 [tool.ruff]
 # Core settings
-target-version = "py311"
-line-length = 90
+target-version = "py312"
+line-length = 200
 indent-width = 4
 preview = true
 exclude = ["src/alembic", "venv", "__pycache__", "migrations"]
@@ -24,6 +24,7 @@ ignore = [
     "ANN003",  # ignore missing **kwargs annotation
     "RET504",  # unnecessary variable assignment before return
     "D107",    # Missing docstring in `__init__`
+    "I001",    # Ignore imports sorting
 ]
 
 # Optional: limit complexity
@@ -43,7 +44,6 @@ docstring-code-line-length = 60
 
 # Sorting imports
 [tool.ruff.lint.isort]
-known-local-folder = ["src"]
 case-sensitive = true
 
 # Per-file ignores

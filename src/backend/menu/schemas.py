@@ -1,7 +1,8 @@
 from datetime import datetime
 
-from menu.constants import MENU_ANSWER_MAX_LENGTH, MENU_BUTTON_TEXT_MAX_LENGTH
 from pydantic import BaseModel, ConfigDict, Field
+
+from menu.constants import MENU_ANSWER_MAX_LENGTH, MENU_BUTTON_TEXT_MAX_LENGTH
 from users.schemas import UserRelationshipSchema
 
 

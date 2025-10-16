@@ -1,11 +1,12 @@
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from auth.schemas import (
     SessionInSchema,
     SessionReadSchema,
 )
 from auth.service import session_service
 from database import get_async_session
-from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from users.schemas import (
     UserLoginSchema,
     UserReadSchema,
@@ -29,25 +30,25 @@ async def create_session(
 
 
 @auth_router.get(
-    '/{id}',
+    '/{session_id}',
     response_model=UserReadSchema,
     status_code=status.HTTP_200_OK,
     summary='Получение пользователя по сессии',
 )
 async def get_session(
-    id: str, session: AsyncSession = Depends(get_async_session)
+    session_id: str, session: AsyncSession = Depends(get_async_session)
 ) -> UserReadSchema:
     """Эндпоинт получения пользователя по сессии."""
-    session_schema = SessionInSchema(id=id)
+    session_schema = SessionInSchema(id=session_id)
     user = await session_service.get_user_by_session(session, session_schema)
     return user
 
 
 @auth_router.delete(
-    '/{id}', status_code=status.HTTP_204_NO_CONTENT, summary='Удаление сессии'
+    '/{session_id}', status_code=status.HTTP_204_NO_CONTENT, summary='Удаление сессии'
 )
 async def delete_session(
-    id: str, session: AsyncSession = Depends(get_async_session)
+    session_id: str, session: AsyncSession = Depends(get_async_session)
 ) -> None:
     """Эндпоинт получения пользователя по сессии."""
-    await session_service.delete(session, id)
+    await session_service.delete(session, session_id)

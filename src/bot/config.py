@@ -28,10 +28,10 @@ class BotCallback(CallbackData, prefix='b'):
 class Settings(BaseSettings):
     """Класс настроек приложения."""
 
-    PROD_ENVIRONMENT: bool = os.getenv('PROD', 'False').lower() in ('true', '1')
-    API_HOST: str = os.getenv('API_HOST')
-    API_PORT: int = os.getenv('API_PORT')
-    TOKEN: str = os.getenv('TELEGRAM_BOT_TOKEN', '')
+    PROD_ENVIRONMENT: bool = os.getenv('HRBOT_PROD', 'False').lower() in ('true', '1')
+    API_HOST: str = os.getenv('HRBOT_API_HOST')
+    API_PORT: int = os.getenv('HRBOT_API_PORT')
+    TOKEN: str = os.getenv('HRBOT_TELEGRAM_BOT_TOKEN', '')
 
     # Бот обрабатывает только два типа реакций пользователя
     ALLOWED_UPDATES: list[str] = ['message', 'callback_query']
@@ -54,11 +54,11 @@ class Settings(BaseSettings):
     ERROR_CONNECTION_TO_BACKEND_API: str = 'Ошибка подключения. Повторите попытку позже'
 
     # Настройки для вебхуков
-    WEBHOOK_SECRET: str = os.getenv('WEBHOOK_SECRET')
-    WEB_SERVER_HOST: str = os.getenv('WEB_SERVER_HOST')
-    WEB_SERVER_PORT: int = os.getenv('WEB_SERVER_PORT')
-    WEBHOOK_PATH: str = os.getenv('WEBHOOK_PATH')
-    BASE_WEBHOOK_URL: str = os.getenv('BASE_WEBHOOK_URL')
+    WEBHOOK_SECRET: str = os.getenv('HRBOT_WEBHOOK_SECRET')
+    WEB_SERVER_HOST: str = os.getenv('HRBOT_WEB_SERVER_HOST')
+    WEB_SERVER_PORT: int = os.getenv('HRBOT_WEB_SERVER_PORT')
+    WEBHOOK_PATH: str = os.getenv('HRBOT_WEBHOOK_PATH')
+    BASE_WEBHOOK_URL: str = os.getenv('HRBOT_BASE_WEBHOOK_URL')
 
 
 class BotSettings(Settings):

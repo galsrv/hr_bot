@@ -1,5 +1,6 @@
 from fastapi import Depends
 from nicegui import APIRouter, ui
+
 from pages.dependencies import get_current_user
 from pages.urls import (
     LOGIN_PAGE_URL,

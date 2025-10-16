@@ -1,8 +1,9 @@
 from datetime import datetime
 
 from fastapi_pagination import Page
-from messages.constants import MESSAGE_TEXT_MAX_LENGTH
 from pydantic import BaseModel, ConfigDict, Field
+
+from messages.constants import MESSAGE_TEXT_MAX_LENGTH
 from users.schemas import UserRelationshipSchema
 
 

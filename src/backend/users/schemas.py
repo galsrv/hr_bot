@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
 from users.constants import (
     USERNAME_REGEXP,
     USER_NAME_MAX_LENGTH,
@@ -12,9 +13,17 @@ from users.constants import (
 from users.utils import hash_password
 
 
+class RoleCreateSchema(BaseModel):
+    """Класс создания роли."""
+    name: str
+    can_edit_settings: bool
+    can_edit_users: bool
+    can_send_messages: bool
+    can_edit_menu: bool
+
+
 class RoleReadSchema(BaseModel):
     """Класс чтения роли."""
-
     id: int
     name: str
     can_edit_settings: bool
@@ -51,7 +60,7 @@ class UserCreateSchema(UserBaseSchema):
     )
     role_id: int
     is_active: Optional[bool] = True
-    created_by_id: int
+    created_by_id: Optional[int] = None
     updated_by_id: Optional[int] = None
 
 

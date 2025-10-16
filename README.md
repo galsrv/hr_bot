@@ -36,7 +36,7 @@ pip install -r src/bot/requirements.txt
 
 3. Fill `infra/.env` using `.env.example`
 
-4. Set the base directory - for the part of the project you want to start
+4. Set the base directory - for the subproject you want to start
 ```shell
 cd src/backend
 ```
@@ -46,13 +46,34 @@ cd src/backend
 alembic upgrade head
 ```
 
-6. Start the project
+6. For backend - create the first admin
+```shell
+python create_admin.py -u <username> -p <password>
+```
+
+7. Start the project
 ```shell
 python main.py
 ```
 
+Local deployment in containers
+------
+Build the images:
+```shell
+docker build -t hrbot_backend -f ./infra/Dockerfile_backend .
+docker build -t hrbot_frontend -f ./infra/Dockerfile_frontend .
+docker build -t hrbot_bot -f ./infra/Dockerfile_bot .
+docker build -t hrbot_gateway -f ./infra/Dockerfile_gateway .
+```
+Run docker network:
+```shell
+docker compose -f infra/docker-compose.yml up
+```
+Pay attention that yml-file contains links to the specific env-variables for DB creation. 
+
 Features implemented
 ======
+* FastApi backend
 * SQLAlchemy ORM
 * Alembic migrations
 * Pydantic models, whenever possible
@@ -63,6 +84,11 @@ Features implemented
 * Frontend communicating with backend by REST API
 * Authentication through sessions & cookies - self-made, just to try it
 * Logging
-* Auto tests
 
+Known limitations
+======
+* Error pages for Nicegui are not customized
+* Constants and validators are duplicated at backend and frontend
+* Autotests don't exist
+* Telegram username change is not processed
 

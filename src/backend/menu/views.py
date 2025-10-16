@@ -1,7 +1,9 @@
-from config import settings as s
-from database import get_async_session
 from fastapi import APIRouter, Depends
 from fastapi_pagination import Page, Params
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from config import settings as s
+from database import get_async_session
 from menu.schemas import (
     MenuItemCreateSchema,
     MenuItemReadSchema,
@@ -9,7 +11,6 @@ from menu.schemas import (
     MenuUploadSchema,
 )
 from menu.service import menu_service
-from sqlalchemy.ext.asyncio import AsyncSession
 
 menu_router = APIRouter()
 
@@ -26,7 +27,7 @@ async def get_menu_page(
 
 
 @menu_router.get(
-    '/{id}', response_model=MenuItemReadSchema, summary='Получить запись справочника'
+    '/{menu_item_id}', response_model=MenuItemReadSchema, summary='Получить запись справочника'
 )
 async def get_menu_item(
     menu_item_id: int,
@@ -49,7 +50,7 @@ async def create_menu_item(
 
 
 @menu_router.patch(
-    '/{id}', response_model=MenuItemReadSchema, summary='Изменить запись справочника'
+    '/{menu_item_id}', response_model=MenuItemReadSchema, summary='Изменить запись справочника'
 )
 async def update_menu_item(
     menu_item_id: int,
@@ -57,12 +58,13 @@ async def update_menu_item(
     session: AsyncSession = Depends(get_async_session),
 ) -> MenuItemReadSchema:
     """Эндпоинт изменения записи справочника."""
-    edited_menu_item = await menu_service.update_menu_item(session, menu_item_id, data_input)
+    edited_menu_item = await menu_service.update_menu_item(
+        session, menu_item_id, data_input)
     return edited_menu_item
 
 
 @menu_router.delete(
-    '/{id}', response_model=None, status_code=204, summary='Удалить запись справочника'
+    '/{menu_item_id}', response_model=None, status_code=204, summary='Удалить запись справочника'
 )
 async def delete_menu_item(
     menu_item_id: int, session: AsyncSession = Depends(get_async_session)

@@ -1,0 +1,7 @@
+SETTING_NAME_MAX_LEN = 50
+SETTING_VALUE_MAX_LEN = 255
+SETTING_INT_MAX_VALUE = 10
+SETTING_DESCRIPTION_MAX_LEN = 255
+
+ERROR_MESSAGE_INT_TYPE = 'Значение должно быть целым числом'
+ERROR_MESSAGE_VALUE_INT = 'Значение должно быть не менее 1 и не более 10'

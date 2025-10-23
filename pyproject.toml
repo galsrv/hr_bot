@@ -1,0 +1,62 @@
+[tool.ruff]
+# Core settings
+target-version = "py312"
+line-length = 200
+indent-width = 4
+preview = true
+exclude = ["src/alembic", "venv", "__pycache__", "migrations"]
+
+# You can enable auto-fixing only certain rules if you want:
+# fix = true
+# fix-only = ["I", "F401"]
+
+[tool.ruff.lint]
+# Choose which rule families to check
+select = [
+    "E", "F", "W", "I", "N", "D", "D400", "C90", "A", "ANN",
+    "ASYNC", "COM", "RET"
+]
+# Ignore selected rules
+ignore = [
+    "E265", "F811", "D100", "D104", "D105",
+    "D203", "D211", "D213", "N818", "ANN401", "W505", "COM812",
+    "ANN002",  # ignore missing *args annotation
+    "ANN003",  # ignore missing **kwargs annotation
+    "RET504",  # unnecessary variable assignment before return
+    "D107",    # Missing docstring in `__init__`
+    "I001",    # Ignore imports sorting
+]
+
+# Optional: limit complexity
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+# Allow star-args without explicit type annotation
+[tool.ruff.lint.flake8-annotations]
+allow-star-arg-any = true
+
+# Prefer single quotes
+[tool.ruff.format]
+quote-style = "single"
+line-ending = "lf"
+docstring-code-format = true
+docstring-code-line-length = 60
+
+# Sorting imports
+[tool.ruff.lint.isort]
+case-sensitive = true
+
+# Per-file ignores
+[tool.ruff.lint.extend-per-file-ignores]
+"__init__.py" = ["E401", "E402"]
+
+# Optional: documentation style
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pyright]
+typeCheckingMode = "off"
+reportAttributeAccessIssue = false
+reportReturnType = false
+reportArgumentType = false
+reportOptionalMemberAccess = false

@@ -1,0 +1,63 @@
+name: HR_BOT
+
+volumes:
+  db_data:
+
+services:
+  db:
+    image: postgres:17-alpine
+    env_file:
+      - .env
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_USER: ${HRBOT_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${HRBOT_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${HRBOT_POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    command: >
+      postgres -c max_connections=1000
+               -c shared_buffers=256MB
+               -c effective_cache_size=768MB
+               -c maintenance_work_mem=64MB
+               -c checkpoint_completion_target=0.7
+               -c wal_buffers=16MB
+               -c default_statistics_target=100
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${HRBOT_POSTGRES_USER} -d $${HRBOT_POSTGRES_DB}" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  hrbot_backend:
+    image: galsrv/hrbot_backend
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+
+  hrbot_bot:
+    image: galsrv/hrbot_bot
+    env_file: .env
+    depends_on:
+      - hrbot_backend
+
+  hrbot_frontend:
+    image: galsrv/hrbot_frontend
+    env_file: .env
+    environment:
+      - FORWARDED_ALLOW_IPS=*
+    depends_on:
+      - hrbot_backend
+
+  hrbot_gateway:
+    image: galsrv/hrbot_gateway
+    ports:
+      - 9000:80
+    depends_on:
+      - hrbot_backend
+      - hrbot_bot
+      - hrbot_frontend

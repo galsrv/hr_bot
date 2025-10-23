@@ -1,0 +1,8 @@
+venv/
+logs/
+
+__pychache__
+.vscode/
+.git
+
+src/backend/logs/

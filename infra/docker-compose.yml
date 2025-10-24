@@ -48,8 +48,6 @@ services:
   hrbot_frontend:
     image: hrbot_frontend
     env_file: .env
-    environment:
-      - FORWARDED_ALLOW_IPS=*
     depends_on:
       - hrbot_backend
 

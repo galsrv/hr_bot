@@ -13,7 +13,7 @@ Stack
 Architecture
 ======
 <p align="center">
-    <img src="infra/arc.png" height="300">
+    <img src="infra/arc.png" height="500">
 </p>
 
 Deployment
@@ -109,6 +109,12 @@ docker exec hr_bot-hrbot_backend-1 alembic upgrade head
 ```shell
 docker exec hr_bot-hrbot_backend-1 python create_admin.py -u <username> -p <password>
 ```
+8. To stop & start again just Tellegram bot
+```shell
+docker stop hr_bot-hrbot_bot-1
+docker start hr_bot-hrbot_bot-1
+```
+
 
 Features implemented
 ======
